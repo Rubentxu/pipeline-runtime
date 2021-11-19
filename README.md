@@ -1,3 +1,7 @@
+## Ejecutar pipeline de ejemplo con:
+```bash
+$ gradle examples:runScript
+```
 
 
 ### Construcción y ejecucion de imagen docker

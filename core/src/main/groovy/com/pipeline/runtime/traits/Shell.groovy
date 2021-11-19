@@ -14,7 +14,7 @@ trait Shell {
     final Map environment
 
     Process run(String command) {
-        return ['sh', '-c', command].execute (
+        return command.execute (
             environment.collect { "${it.key}=${it.value}"},
             currentDir)
     }
@@ -48,5 +48,27 @@ trait Shell {
             println result.serr
         }
     }
+//
+//    Object sh(@NamedParams([
+//            @NamedParam(value = "script", type = String, required = true),
+//            @NamedParam(value = "returnStdout", type = Boolean)
+//    ]) final Map param) {
+//
+//        final Process p = param.script.toString().execute()
+//        p.waitFor()
+//
+//        println "+ ${param.script}"
+//
+//        if (p.exitValue() == 0) {
+//            if (param.returnStdout) {
+//                return p.text
+//            }
+//
+//            println p.text
+//        } else {
+//            println p.err.text
+//        }
+//
+//    }
 
 }
