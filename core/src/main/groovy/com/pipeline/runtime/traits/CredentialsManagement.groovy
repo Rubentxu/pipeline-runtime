@@ -1,11 +1,5 @@
 package com.pipeline.runtime.traits
 
-import com.pipeline.runtime.PipelineDsl
-import com.pipeline.runtime.StageDsl
-
-import static groovy.lang.Closure.DELEGATE_FIRST
-import static groovy.lang.Closure.DELEGATE_ONLY
-
 trait CredentialsManagement {
     def urlServer = 'https://cloudbees.gcp.pipeline.com/desarrollo-cna-master/scriptText'
     def user = 'e_rcabre@pipeline.com'

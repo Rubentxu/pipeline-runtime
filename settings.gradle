@@ -1,0 +1,6 @@
+rootProject.name = 'pipeline-runtime'
+include 'core', 'examples'
+
+
+enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')
+

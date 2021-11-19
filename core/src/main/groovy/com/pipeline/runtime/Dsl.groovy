@@ -1,14 +1,10 @@
 package com.pipeline.runtime
 
-import com.pipeline.jenkins.shared.libs.executors.StageExecutor
-import com.pipeline.jenkins.shared.libs.state.GlobalState
 import com.pipeline.runtime.traits.BaseSteps
 import com.pipeline.runtime.traits.DynamicObject
 import com.pipeline.runtime.traits.Shell
 import com.pipeline.runtime.traits.Workspace
 import groovy.transform.CompileStatic
-import groovy.transform.NamedParam
-import groovy.transform.NamedParams
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -17,15 +13,15 @@ import java.util.concurrent.ConcurrentMap
 
 import static groovy.lang.Closure.DELEGATE_FIRST
 import static groovy.lang.Closure.DELEGATE_ONLY
-import static com.pipeline.jenkins.shared.libs.executors.cdi.ServiceLocator.*
+
 
 @CompileStatic
 class Dsl {
 
-    static void config(Map userConfig, Map environment) {
-        def pipelineResources = getContext().getPipelineResources()
-        pipelineResources.resolveConfigurationWithEnvironment(userConfig, environment)
-    }
+//    static void config(Map userConfig, Map environment) {
+//        def pipelineResources = getContext().getPipelineResources()
+//        pipelineResources.resolveConfigurationWithEnvironment(userConfig, environment)
+//    }
 
     static void pipeline(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {
         def stepsWithTraits = initialize() as StepsScript
@@ -43,31 +39,30 @@ class Dsl {
         return stepsWithTraits
     }
 
-    public static class cdi {
-        static void initialize(_steps) {
-            println "Initialize CDI Module"
-            def stepsWithTraits = initialize()
-            registerDefaultContext(stepsWithTraits)
-            println "End Initialize CDI Module"
-        }
-
-        static void postInitialize() {
-            def gitlab_domain = GlobalState.getProperty('gitlab.domain') as String
-            getContext().postInitialize([gitlab_domain: gitlab_domain])
-        }
-    }
+//    public static class cdi {
+//        static void initialize(_steps) {
+//            println "Initialize CDI Module"
+//            def stepsWithTraits = initialize()
+//            registerDefaultContext(stepsWithTraits)
+//            println "End Initialize CDI Module"
+//        }
+//
+//        static void postInitialize() {
+//            def gitlab_domain = GlobalState.getProperty('gitlab.domain') as String
+//            getContext().postInitialize([gitlab_domain: gitlab_domain])
+//        }
+//    }
 }
 
 
 class PipelineDsl {
     final Placeholder any = Placeholder.ANY
     final StepsScript steps
-    protected StageExecutor stageExecutor
+
     static final ConcurrentMap<String, String> env = new ConcurrentHashMap()
 
     PipelineDsl(StepsScript steps) {
         this.steps = steps
-        this.stageExecutor = new StageExecutor(steps)
         env.putAll([WORKSPACE:'build/workspace',WORKSPACE_TMP:'build/workspace@tmp'])
     }
 
@@ -97,7 +92,7 @@ class PipelineDsl {
 
         dsl.stages.each { stage ->
             println "iterate stage item $stage.name"
-            stageExecutor.stage(stage.name,stage.closure)
+            stage(stage.name,stage.closure)
 //            stage.run(steps)
         }
     }
@@ -125,7 +120,7 @@ class Stage {
     }
 }
 
-class StageDsl extends StageExecutor{
+class StageDsl {
 
     StageDsl(StepsScript steps) {
         super(steps)

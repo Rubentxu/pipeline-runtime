@@ -1,6 +1,9 @@
-apply plugin: 'groovy'
-apply plugin: 'idea'
-apply plugin: 'jacoco'
+plugins {
+    id 'groovy'
+    id 'idea'
+    id 'jacoco'
+}
+
 
 
 jacoco {
@@ -19,30 +22,8 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-// Follow the structure as dictated by Jenkins
-sourceSets {
-    main {
-        groovy {
-            srcDirs = ['src/groovy']
-        }
-        resources {
-            srcDirs = ['resources']
-        }
-    }
-    test {
-        groovy {
-            srcDirs = ['test/groovy']
-        }
-        resources {
-            srcDirs = ['test/resources']
-        }
-    }
-
-}
-
-
-
 dependencies {
+    implementation project(":core")
     implementation 'org.codehaus.groovy:groovy-all:2.5.14'
     // Declare the dependency for your favourite test framework you want to use in your tests.
 //    testImplementation 'com.homeaway.devtools.jenkins:jenkins-spock:2.1.5'
@@ -58,13 +39,14 @@ dependencies {
 
 
 task runScript(type: JavaExec) {
-    def pipeline = 'Jenkinsfile_example'// project?.pipeline?:'Jenkinsfile'
+    description 'Run Groovy pipeline'
+    def pipeline = 'Jenkinsfile'// project?.pipeline?:'Jenkinsfile'
 //    classpath sourceSets.integration.runtimeClasspath
-
+    classpath = sourceSets.main.runtimeClasspath
     main = "pipelines.$pipeline"
     workingDir = buildDir
 }
-
+defaultTasks 'runScript'
 
 
 

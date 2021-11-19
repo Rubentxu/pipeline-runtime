@@ -1,6 +1,6 @@
 package pipelines
 
-import static com.mercadona.runtime.Dsl.pipeline
+import static com.pipeline.runtime.Dsl.pipeline
 
 println '''
    ___                                ___ _            _ _
