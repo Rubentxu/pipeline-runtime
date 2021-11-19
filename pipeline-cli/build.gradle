@@ -50,7 +50,7 @@ nativeBuild {
     debug = true // Determines if debug info should be generated, defaults to false
     verbose = true // Add verbose output, defaults to false
     fallback = true // Sets the fallback mode of native-image, defaults to false
-
-    useFatJar = true // Instead of passing each jar individually, builds a fat jar
+    buildArgs.add('-J-Xmx2G')
+//    useFatJar = true // Instead of passing each jar individually, builds a fat jar
 }
 
