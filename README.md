@@ -32,5 +32,3 @@ $ docker run --user podman -it --privileged --network host \
     it works
 ```
 
-npm config set cafile /etc/pki/ca-trust/source/anchors/gitlab-gcp-mercadona-com-chain.crt --global
-NODE_EXTRA_CA_CERTS=/etc/pki/ca-trust/source/anchors/gitlab-gcp-mercadona-com-chain.crt
