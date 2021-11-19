@@ -1,5 +1,12 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'pipeline-runtime'
-include 'core', 'examples'
+include 'core', 'examples', 'pipeline-cli'
 
 
 enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')

@@ -1,0 +1,56 @@
+plugins {
+    id 'groovy'
+    id 'idea'
+    id 'org.graalvm.buildtools.native' version '0.9.4'
+}
+
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.jenkins-ci.org/releases/' }
+    maven { url 'https://repo.jenkins-ci.org/public' }
+
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencies {
+    implementation project(":core")
+    implementation 'org.codehaus.groovy:groovy-all:2.5.14'
+    implementation 'info.picocli:picocli:4.6.2'
+    annotationProcessor 'info.picocli:picocli-codegen:4.6.2'
+    implementation 'org.slf4j:slf4j-simple:1.7.28'
+
+    testImplementation 'org.spockframework:spock-core:1.1-groovy-2.4'
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'org.mockito:mockito-core:2.+'
+
+}
+
+compileJava {
+    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
+}
+
+nativeBuild {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(8)
+
+    }
+}
+
+
+
+nativeBuild {
+    // Main options
+    imageName = 'application' // The name of the native image, defaults to the project name
+    mainClass = 'com.pipeline.cli.PipelineRuntime' // The main class to use, defaults to the application.mainClass
+    debug = true // Determines if debug info should be generated, defaults to false
+    verbose = true // Add verbose output, defaults to false
+    fallback = true // Sets the fallback mode of native-image, defaults to false
+
+    useFatJar = true // Instead of passing each jar individually, builds a fat jar
+}
+
