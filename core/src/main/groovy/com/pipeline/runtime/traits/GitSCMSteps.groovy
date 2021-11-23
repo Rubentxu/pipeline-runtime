@@ -1,40 +1,71 @@
 package com.pipeline.runtime.traits
 
-import com.pipeline.runtime.PipelineDsl
-import com.pipeline.runtime.StageDsl
 
-import static groovy.lang.Closure.DELEGATE_FIRST
-import static groovy.lang.Closure.DELEGATE_ONLY
+import org.eclipse.jgit.api.Git
+import java.nio.file.Files
 
 trait GitSCMSteps {
     void node(final Closure closure) {
         node("default", closure)
     }
 
-    void node(final String name, @DelegatesTo(value = StageDsl, strategy = DELEGATE_ONLY) final Closure closure) {
-        println "==> Running '${name}' node..."
+    def checkout(final Scm scm) {
+        File localPath = File.createTempFile("build/workspace", "");
 
-        final StageDsl dsl = new StageDsl(this)
+        Files.delete(localPath.toPath())
 
-        closure.delegate = dsl
-        closure.resolveStrategy = DELEGATE_FIRST
-        closure.call(PipelineDsl.env)
-    }
-
-    void ansiColor(String name, closure) {
-//        closure.delegate = this
-//        closure.resolveStrategy = DELEGATE_FIRST
-        closure.call(PipelineDsl.env)
-    }
-
-    void script(closure) {
-        println "==> Running 'script closure..."
-        closure.delegate = this
-        closure.resolveStrategy = DELEGATE_FIRST
-        closure.call(PipelineDsl.env)
-    }
-
-    void echo(final String message) {
-        println message
+        def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
+        targetDirectory = "build/workspace/${targetDirectory?:''}"
+        Git.cloneRepository()
+                .setURI(scm.userRemoteConfigs[0].url)
+                .setDirectory(new File(targetDirectory))
+                .setBranchesToClone(scm.branches.collect {it.name })
+                .setBranch(scm.branches[0].name)
+                .call()
     }
 }
+
+
+class Scm  {
+    String $class = 'GitSCM'
+    List<UserRemoteConfigs> userRemoteConfigs = []
+    List<Extension> extensions = [:]
+    List<Branch> branches = [[ name: 'master']]
+
+}
+
+class Branch {
+    String name
+}
+
+class UserRemoteConfigs {
+    String url
+    String name
+    String refspec
+    String credentialsId
+}
+
+trait Extension {
+    String $class() { this.class.name }
+}
+
+class CleanCheckout implements Extension {}
+
+class RelativeTargetDirectory implements Extension {
+    String relativeTargetDir
+}
+
+class LocalBranch implements Extension {
+    String localBranch
+}
+
+class SparseCheckoutPaths implements Extension {
+    List<Path> sparseCheckoutPaths
+    class Path {
+        String path
+    }
+}
+
+
+
+

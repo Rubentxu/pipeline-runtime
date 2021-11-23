@@ -1,6 +1,7 @@
 ## Ejecutar pipeline de ejemplo con:
 ```bash
 $ gradle examples:runScript
+$ gradle clean pipeline-cli:nativeBuild
 ```
 
 
