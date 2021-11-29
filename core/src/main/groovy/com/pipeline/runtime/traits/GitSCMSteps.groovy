@@ -1,7 +1,7 @@
 package com.pipeline.runtime.traits
 
 
-import org.eclipse.jgit.api.Git
+//import org.eclipse.jgit.api.Git
 import java.nio.file.Files
 
 trait GitSCMSteps {

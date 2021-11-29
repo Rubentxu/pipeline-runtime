@@ -25,14 +25,19 @@ pipeline {
                 sh "ls -la"
                 sh(script: 'date +%Y-%m-%d', returnStdout: false)
                 echo "Groovy rocks!"
-                echo "env.SOME_STRING = ${env.SOME_STRING}"
-                sh 'env'
+                echo "env.SOME_STRING=${env.SOME_STRING}"
+                sh 'echo $PATH'
+
+                sh '''echo "Who I'm $SHELL"'''
 
             }
         }
         stage("Test") {
             steps {
+                sh "gradle -v"
+                sh "java -version"
                 sh "mvn -version"
+
             }
         }
     }
