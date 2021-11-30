@@ -3,7 +3,7 @@ credentials:
     id: gitlab
     type: username_password
     user: e_rcabre
-    pass: Rudacaga74.
+    pass: password.
   - name: gitlab_token
     id: gitlab_token
     type: secret_text
