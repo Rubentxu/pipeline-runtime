@@ -1,11 +1,12 @@
 package com.pipeline.runtime
 
+import com.pipeline.runtime.traits.CredentialsManagement
 import com.pipeline.runtime.traits.Shell
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-class StepsExecutor implements Shell {
+class StepsExecutor implements Shell, CredentialsManagement {
     private ConcurrentMap<String, Object> dynamicProps
     final ConcurrentMap<String, String> env = [:] as ConcurrentHashMap
 
@@ -18,7 +19,7 @@ class StepsExecutor implements Shell {
                 node: this.&defaultMethodClosure,
                 dir: this.&defaultMethodClosure,
                 node: this.&defaultMethodClosure,
-                string: {}
+                withCredentials: this.&defaultMethodClosure,
         ] as ConcurrentHashMap
 
     }
@@ -51,6 +52,8 @@ class StepsExecutor implements Shell {
                 return this
             case "env":
                 return this.env
+            case "credentials":
+                return this.getCredentialsStore()
             default:
                 return dynamicProps[propName]
         }

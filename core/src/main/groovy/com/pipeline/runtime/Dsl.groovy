@@ -34,6 +34,7 @@ class PipelineDsl {
 
     PipelineDsl() {
         PipelineDsl.steps.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
+        PipelineDsl.steps.credentials.addAll(Dsl.script.getBinding().getVariables()?.credentials)
     }
 
     void agent(final Placeholder any) {

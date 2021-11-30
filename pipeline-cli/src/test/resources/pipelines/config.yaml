@@ -1,9 +1,13 @@
 credentials:
   - name: gitlab
-    id: 123254
-    type:
+    id: gitlab
+    type: username_password
+    user: e_rcabre
+    pass: Rudacaga74.
+  - name: gitlab_token
+    id: gitlab_token
+    type: secret_text
+    text: e_rcabre-token
 
-gitlab:
-  idCredential: token
 environment:
   MENSAJE: Hola Mundo

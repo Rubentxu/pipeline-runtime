@@ -43,7 +43,14 @@ pipeline {
                 sh "gradle -v"
                 sh "java -version"
                 sh "mvn -version"
-
+                withCredentials([ string(credentialsId: 'gitlab_token', variable: 'TOKEN')
+                        ]) {
+                    echo "Pintamos el token: <${env.TOKEN}>"
+                }
+                withCredentials([ usernamePassword(credentialsId: 'gitlab', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    echo "Pintamos el USER: <${env.USER}>"
+                    echo "Pintamos el PASS: <${env.PASS}>"
+                }
             }
         }
     }
