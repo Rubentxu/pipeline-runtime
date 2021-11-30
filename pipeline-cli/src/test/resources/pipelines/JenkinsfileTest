@@ -1,6 +1,9 @@
 package pipelines
 
 import static com.pipeline.runtime.Dsl.pipeline
+import static com.pipeline.runtime.Dsl.initialize
+
+initialize(this)
 
 println '''
    ___                                ___ _            _ _
@@ -10,6 +13,8 @@ println '''
 \\____/|_|  \\___/ \\___/ \\_/  \\__, | \\/    |_| .__/ \\___|_|_|_| |_|\\___|
                             |___/          |_|
 '''
+
+
 
 pipeline {
     agent any
@@ -21,13 +26,14 @@ pipeline {
 
     stages {
         stage("Build") {
-            steps { env ->
+            steps {
                 sh "ls -la"
                 sh(script: 'date +%Y-%m-%d', returnStdout: false)
                 echo "Groovy rocks!"
                 echo "env.SOME_STRING=${env.SOME_STRING}"
-                sh 'echo $PATH'
+                echo "Mensaje ${env.MENSAJE}"
 
+                sh 'echo $PATH'
                 sh '''echo "Who I'm $SHELL"'''
 
             }

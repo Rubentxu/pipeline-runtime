@@ -22,7 +22,7 @@ dependencies {
     implementation 'org.codehaus.groovy:groovy-all:2.5.14'
     implementation 'info.picocli:picocli:4.6.2'
     annotationProcessor 'info.picocli:picocli-codegen:4.6.2'
-    implementation 'io.github.cdimascio:dotenv-java:2.2.0'
+    implementation 'org.yaml:snakeyaml:1.29'
     implementation 'org.slf4j:slf4j-simple:1.7.28'
 
     testImplementation 'org.spockframework:spock-core:1.1-groovy-2.4'

@@ -1,6 +1,6 @@
 package com.pipeline.cli
 
-import io.github.cdimascio.dotenv.Dotenv
+import org.yaml.snakeyaml.Yaml
 import picocli.CommandLine
 import picocli.CommandLine.Option;
 
@@ -10,23 +10,28 @@ class PipelineRuntime implements Runnable {
     @Option(names = ["-j", "--jenkinsfile"], description = "Jenkinsfile")
     String jenkinsFile
 
-    @Option(names = ["-d", "--dotfile"], description = "Environment dot file")
-    String dotFile
+    @Option(names = ["-c", "--config"], description = "Jenkins config file")
+    String configFile
 
     void run() throws IllegalAccessException, InstantiationException, IOException {
-//        Dotenv dotenv = Dotenv.configure()
-//                .directory(dotFile)
-//                .ignoreIfMalformed()
-//                .ignoreIfMissing()
-//                .systemProperties()
-//                .load();
-//            new GroovyShell().run(new File(jenkinsFile));
+        def binding = new Binding()
+        if(configFile) {
+            Yaml parser = new Yaml()
+            Map example = parser.load((configFile as File).text)
+
+            example.each{println it}
+            binding = new Binding(example)
+            println "Binding $example"
+
+        }
+
+
         Script script = loader.parseClass(new File(jenkinsFile)).newInstance()
+        script.setBinding(binding)
         script.run()
-//            GroovyObject calc = (GroovyObject) pipelineClass.newInstance()
-//            calc.invokeMethod("main", null)
 
     }
+
     static void main(String[] args) {
         System.exit(new CommandLine(new PipelineRuntime()).execute(args))
     }

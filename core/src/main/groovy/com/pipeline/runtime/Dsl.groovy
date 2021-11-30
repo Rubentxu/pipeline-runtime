@@ -1,12 +1,6 @@
 package com.pipeline.runtime
 
-import com.pipeline.runtime.traits.BaseSteps
-import com.pipeline.runtime.traits.DynamicObject
-import com.pipeline.runtime.traits.GitSCMSteps
-import com.pipeline.runtime.traits.Shell
-import com.pipeline.runtime.traits.Workspace
-import groovy.transform.NamedParam
-import groovy.transform.NamedParams
+import com.pipeline.runtime.traits.*
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -16,9 +10,12 @@ import java.util.concurrent.ConcurrentMap
 import static groovy.lang.Closure.DELEGATE_FIRST
 import static groovy.lang.Closure.DELEGATE_ONLY
 
-
-
 class Dsl {
+    static Script script
+
+    static void initialize(script) {
+        this.script = script
+    }
 
     static void pipeline(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {
         final PipelineDsl dsl = new PipelineDsl()
@@ -32,15 +29,19 @@ class Dsl {
 
 class PipelineDsl {
     final Placeholder any = Placeholder.ANY
+    static final Steps steps = new Steps()
 
-    static final ConcurrentMap<String, String> env = [:] as ConcurrentHashMap
+
+    PipelineDsl() {
+        steps.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
+    }
 
     void agent(final Placeholder any) {
         println "Running pipeline using any available agent..."
     }
 
     void environment(@DelegatesTo(value = Map, strategy = DELEGATE_FIRST) final Closure closure) {
-        env.with(closure)
+        steps.env.with(closure)
     }
 
     void stages(@DelegatesTo(value = StagesDsl, strategy = DELEGATE_ONLY) final Closure closure) {
@@ -61,7 +62,7 @@ class PipelineDsl {
 }
 
 class StagesDsl {
-    protected final List<Stage> stages = []
+    final List<Stage> stages = []
 
     void stage(final String name, @DelegatesTo(value = StageDsl, strategy = DELEGATE_ONLY) final Closure closure) {
         stages << new Stage(name, closure)
@@ -92,15 +93,15 @@ class StageDsl {
     void steps(
             @DelegatesTo(value = Steps, strategy = DELEGATE_ONLY)
             @ClosureParams(value = SimpleType, options = ["java.util.Map"]) final Closure closure) {
-        final Steps steps = new Steps()
 
-        closure.delegate = steps
+        closure.delegate = PipelineDsl.steps
         closure.resolveStrategy = DELEGATE_ONLY
-        closure.call(PipelineDsl.env)
+        closure.call()
     }
 }
 
 class Steps implements Workspace, DynamicObject, BaseSteps, Shell, GitSCMSteps {
+    static final ConcurrentMap<String, String> env = [:] as ConcurrentHashMap
 
 }
 

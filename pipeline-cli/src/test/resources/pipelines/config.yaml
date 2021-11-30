@@ -1,0 +1,8 @@
+secrets:
+  gitlab:
+    idCredential: token
+environment:
+  MENSAJE: Hola Mundo
+PipelineDsl:
+  env:
+    MENSAJE: Hola pipeline

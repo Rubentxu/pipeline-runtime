@@ -13,9 +13,7 @@ import groovy.transform.NamedParams
 trait Shell {
     private File currentDir = new File('.')
     private Map environment = [*        : System.env,
-                             M2_HOME  : '/home/rubentxu/.sdkman/candidates/maven/3.8.1',
-                             JAVA_HOME: '/home/rubentxu/.sdkman/candidates/java/21.2.0.r8-grl',
-//                             PATH: '$PATH:$JAVA_HOME/bin:$M2_HOME/bin',
+
     ]
     long timeout = 15000
     boolean redirectErrorStream = false
