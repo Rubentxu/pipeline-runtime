@@ -29,11 +29,11 @@ class Dsl {
 
 class PipelineDsl {
     final Placeholder any = Placeholder.ANY
-    static final Steps steps = new Steps()
+    static final StepsExecutor steps = new StepsExecutor()
 
 
     PipelineDsl() {
-        steps.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
+        PipelineDsl.steps.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
     }
 
     void agent(final Placeholder any) {
@@ -41,7 +41,7 @@ class PipelineDsl {
     }
 
     void environment(@DelegatesTo(value = Map, strategy = DELEGATE_FIRST) final Closure closure) {
-        steps.env.with(closure)
+        PipelineDsl.steps.env.with(closure)
     }
 
     void stages(@DelegatesTo(value = StagesDsl, strategy = DELEGATE_ONLY) final Closure closure) {
@@ -91,7 +91,7 @@ class Stage {
 
 class StageDsl {
     void steps(
-            @DelegatesTo(value = Steps, strategy = DELEGATE_ONLY)
+            @DelegatesTo(value = StepsExecutor, strategy = DELEGATE_ONLY)
             @ClosureParams(value = SimpleType, options = ["java.util.Map"]) final Closure closure) {
 
         closure.delegate = PipelineDsl.steps
@@ -100,10 +100,10 @@ class StageDsl {
     }
 }
 
-class Steps implements Workspace, DynamicObject, BaseSteps, Shell, GitSCMSteps {
-    static final ConcurrentMap<String, String> env = [:] as ConcurrentHashMap
-
-}
+//class StepsExecutor implements Workspace, DynamicObject, BaseSteps, Shell, GitSCMSteps {
+//    static final ConcurrentMap<String, String> env = [:] as ConcurrentHashMap
+//
+//}
 
 
 

@@ -1,8 +1,9 @@
-secrets:
-  gitlab:
-    idCredential: token
+credentials:
+  - name: gitlab
+    id: 123254
+    type:
+
+gitlab:
+  idCredential: token
 environment:
   MENSAJE: Hola Mundo
-PipelineDsl:
-  env:
-    MENSAJE: Hola pipeline

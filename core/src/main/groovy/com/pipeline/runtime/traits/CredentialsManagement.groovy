@@ -13,6 +13,10 @@ trait CredentialsManagement {
 
     }
 
+    def usernamePassword(credentialsId, usernameVariable, passwordVariable) {
+        this.env[]
+    }
+
 //    def findCredentialsId(String id) {
 //
 //        def indent = { String text, int indentationCount ->
@@ -61,3 +65,5 @@ trait CredentialsManagement {
 //
 //    }
 }
+
+
