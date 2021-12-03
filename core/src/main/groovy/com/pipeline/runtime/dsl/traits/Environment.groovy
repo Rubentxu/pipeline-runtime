@@ -1,6 +1,6 @@
-package com.pipeline.runtime.traits
+package com.pipeline.runtime.dsl.traits
 
-import java.util.concurrent.ConcurrentHashMap
+
 import java.util.concurrent.ConcurrentMap
 
 trait Environment {

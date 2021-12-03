@@ -1,7 +1,8 @@
 package pipelines
 
-import static com.pipeline.runtime.Dsl.pipeline
-import static com.pipeline.runtime.Dsl.initialize
+import static com.pipeline.runtime.dsl.Dsl.pipeline
+import static com.pipeline.runtime.dsl.Dsl.initialize
+
 
 initialize(this)
 
@@ -13,7 +14,6 @@ println '''
 \\____/|_|  \\___/ \\___/ \\_/  \\__, | \\/    |_| .__/ \\___|_|_|_| |_|\\___|
                             |___/          |_|
 '''
-
 
 
 pipeline {

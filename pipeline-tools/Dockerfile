@@ -3,15 +3,15 @@ FROM registry.access.redhat.com/ubi8/ubi
 ARG THE_USER=podman
 ARG USER_HOME=/home/${THE_USER}
 ARG ASDF_BASE_FOLDER=${USER_HOME}/.asdf
-ARG ASDF_SH=${ASDF_BASE_FOLDER}/asdf.sh
+ENV ASDF_SH=${ASDF_BASE_FOLDER}/asdf.sh
 ENV ASDF_DATA_DIR="${USER_HOME}/.asdf-data"
 ARG ASDF_BRANCH=v0.8.1
 ENV PATH="${PATH}:${ASDF_DATA_DIR}/shims:${ASDF_DATA_DIR}/bin"
 
-RUN dnf -y update; rpm --restore shadow-utils 2>/dev/null
-RUN yum -y install crun podman fuse-overlayfs unzip curl git tar findutils --exclude container-selinux;
-RUN useradd -m -s /usr/bin/bash -u 1000 ${THE_USER}
-RUN rm -rf /var/cache /var/log/dnf* /var/log/yum.* \
+RUN dnf -y update; rpm --restore shadow-utils 2>/dev/null; \
+    yum -y install crun podman fuse-overlayfs unzip curl git tar findutils --exclude container-selinux; \
+    useradd -m -s /usr/bin/bash -u 1000 ${THE_USER} \
+    && rm -rf /var/cache /var/log/dnf* /var/log/yum.* \
     && echo ${THE_USER}:10000:5000 > /etc/subuid \
     && echo ${THE_USER}:10000:5000 > /etc/subgid
 
@@ -33,10 +33,10 @@ USER $THE_USER
 
 RUN  \
      # ---- Install asdf -------------------------------------------------------
-     git clone --depth 1 https://github.com/asdf-vm/asdf.git $ASDF_BASE_FOLDER --branch $ASDF_BRANCH \
+     git clone --depth 1 https://github.com/asdf-vm/asdf.git ${ASDF_BASE_FOLDER} --branch ${ASDF_BRANCH} \
      # ---- Add docker alias and call asdf.sh in  ~/.bashrc --------------------
-     && echo alias docker='podman' >> $USER_HOME/.bashrc \
-     && echo -e '\n. $ASDF_SH' >> ~/.bashrc \
-     && echo -e '\n. $ASDF_SH' >> ~/.profile \
-     && source $USER_HOME/.bashrc \
+     && echo alias docker='podman' >> ${USER_HOME}/.bashrc \
+     && echo -e '\n. ${ASDF_SH}' >> ~/.bashrc \
+     && echo -e '\n. ${ASDF_SH}' >> ~/.profile \
+     && source ${USER_HOME}/.bashrc \
      && mkdir -p "${ASDF_DATA_DIR}"

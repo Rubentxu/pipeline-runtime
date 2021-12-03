@@ -1,7 +1,7 @@
-package com.pipeline.runtime.traits
+package com.pipeline.runtime.dsl.traits
 
-import com.pipeline.runtime.PipelineDsl
-import com.pipeline.runtime.StageDsl
+import com.pipeline.runtime.dsl.PipelineDsl
+import com.pipeline.runtime.dsl.StageDsl
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
 

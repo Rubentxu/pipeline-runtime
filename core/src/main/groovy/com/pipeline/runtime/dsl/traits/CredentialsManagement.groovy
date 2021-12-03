@@ -1,13 +1,8 @@
-package com.pipeline.runtime.traits
+package com.pipeline.runtime.dsl.traits
 
-import com.pipeline.runtime.vo.SecretText
-import com.pipeline.runtime.vo.TypeCredentials
-import com.pipeline.runtime.vo.UsernamePassword
+
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
-
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 
 trait CredentialsManagement extends Environment {
     private final List credentials = []

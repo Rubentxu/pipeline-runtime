@@ -1,7 +1,7 @@
-package com.pipeline.runtime
+package com.pipeline.runtime.dsl
 
-import com.pipeline.runtime.traits.CredentialsManagement
-import com.pipeline.runtime.traits.Shell
+import com.pipeline.runtime.dsl.traits.CredentialsManagement
+import com.pipeline.runtime.dsl.traits.Shell
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap

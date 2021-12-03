@@ -1,11 +1,8 @@
-package com.pipeline.runtime
+package com.pipeline.runtime.dsl
 
-import com.pipeline.runtime.traits.*
+
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 
 import static groovy.lang.Closure.DELEGATE_FIRST
 import static groovy.lang.Closure.DELEGATE_ONLY

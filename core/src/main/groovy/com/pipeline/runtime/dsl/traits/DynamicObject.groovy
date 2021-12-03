@@ -1,4 +1,4 @@
-package com.pipeline.runtime.traits
+package com.pipeline.runtime.dsl.traits
 
 import java.util.concurrent.ConcurrentHashMap
 

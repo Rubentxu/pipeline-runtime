@@ -22,8 +22,10 @@ java {
 dependencies {
     implementation 'org.codehaus.groovy:groovy-all:2.5.14'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
-    // Declare the dependency for your favourite test framework you want to use in your tests.
-//    testImplementation 'com.homeaway.devtools.jenkins:jenkins-spock:2.1.5'
+    implementation('org.apache.commons:commons-lang3:3.12.0')
+    implementation('commons-io:commons-io:2.11.0')
+    implementation 'org.yaml:snakeyaml:1.29'
+
     testImplementation 'org.spockframework:spock-core:1.1-groovy-2.4'
     testImplementation 'junit:junit:4.13.1'
     testImplementation 'org.mockito:mockito-core:2.+'

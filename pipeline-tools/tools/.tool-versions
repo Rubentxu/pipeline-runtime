@@ -1,0 +1,4 @@
+kubectl 1.21.2
+nodejs 12.16.3
+helm 2.16.9
+stern 1.19.0

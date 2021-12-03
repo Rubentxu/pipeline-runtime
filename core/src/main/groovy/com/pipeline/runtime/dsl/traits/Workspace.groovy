@@ -1,4 +1,4 @@
-package com.pipeline.runtime.traits
+package com.pipeline.runtime.dsl.traits
 
 trait Workspace {
     def deleteDir() {
