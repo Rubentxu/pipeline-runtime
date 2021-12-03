@@ -1,5 +1,6 @@
 package com.pipeline.runtime
 
+import com.pipeline.runtime.library.LibClassLoader
 import com.pipeline.runtime.library.LibraryAnnotationTransformer
 import com.pipeline.runtime.library.LibraryConfiguration
 import com.pipeline.runtime.library.LibraryLoader
@@ -7,6 +8,9 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.yaml.snakeyaml.Yaml
+
+import static com.pipeline.runtime.library.LibraryConfiguration.library
+import static com.pipeline.runtime.library.LocalSource.localSource
 
 
 @CompileStatic
@@ -25,13 +29,27 @@ class PipelineRuntime implements Runnable {
     Binding binding = new Binding()
     ClassLoader baseClassloader = this.class.classLoader
 
-    PipelineRuntime(String jenkinsFile, String configFile, String library='.') {
+    PipelineRuntime(String jenkinsFile, String configFile, String libraryPath='.') {
         this.jenkinsFile = jenkinsFile
         this.configFile = configFile
-        scriptRoots.join(library)
+        scriptRoots.join(libraryPath)
 //        scriptRoots.join(jenkinsFile)
+        def library = library().name('commons')
+                .defaultVersion("master")
+                .allowOverride(true)
+                .implicit(false)
+                .targetPath('<notNeeded>')
+                .retriever(localSource(libraryPath))
+                .build()
+        registerSharedLibrary(library)
+
     }
 
+    void registerSharedLibrary(LibraryConfiguration libraryDescription) {
+        Objects.requireNonNull(libraryDescription)
+        Objects.requireNonNull(libraryDescription.name)
+        this.libraries.put(libraryDescription.name, libraryDescription)
+    }
 
     void run() throws IllegalAccessException, InstantiationException, IOException {
 
@@ -44,6 +62,12 @@ class PipelineRuntime implements Runnable {
             println "Binding $example"
 
         }
+        binding.getVariables().put('library', { String expression ->
+            getLibLoader().loadLibrary(expression)
+            println "$expression libs loaders ${getLibLoader().libRecords}"
+            return new LibClassLoader(this, null)
+        })
+
         gse.run(toFullPath(jenkinsFile), binding)
 
     }
@@ -54,7 +78,7 @@ class PipelineRuntime implements Runnable {
         return url.getPath()
     }
 
-    def init() {
+    PipelineRuntime init() {
         CompilerConfiguration configuration = new CompilerConfiguration()
         loader = new GroovyClassLoader(baseClassloader, configuration)
 

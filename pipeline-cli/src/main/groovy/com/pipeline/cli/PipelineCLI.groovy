@@ -20,7 +20,7 @@ class PipelineCLI implements Runnable {
     void run() throws IllegalAccessException, InstantiationException, IOException {
         PipelineRuntime runtime = new PipelineRuntime(jenkinsFile, configFile, library)
         runtime.init()
-        runtime.run()
+                .run()
 
     }
 

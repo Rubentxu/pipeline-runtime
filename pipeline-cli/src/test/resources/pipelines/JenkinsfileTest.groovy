@@ -1,10 +1,14 @@
 package pipelines
+library('commons')
 
 import static com.pipeline.runtime.dsl.Dsl.pipeline
 import static com.pipeline.runtime.dsl.Dsl.initialize
 
 
+hello()
+
 initialize(this)
+//println new Greeter().sayHello()
 
 println '''
    ___                                ___ _            _ _
