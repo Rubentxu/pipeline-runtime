@@ -1,33 +1,39 @@
 package com.pipeline.runtime
 
+import com.pipeline.runtime.library.LibraryAnnotationTransformer
+import com.pipeline.runtime.library.LibraryConfiguration
+import com.pipeline.runtime.library.LibraryLoader
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.yaml.snakeyaml.Yaml
 
 
 @CompileStatic
 class PipelineRuntime implements Runnable {
-    private final GroovyClassLoader loader = new GroovyClassLoader(this.getClass().getClassLoader())
+    private GroovyClassLoader loader
     private String jenkinsFile
     private String configFile
-    private String library
 
-    PipelineRuntime(String jenkinsFile, String configFile, String library) {
+    Map<String, LibraryConfiguration> libraries = [:]
+    protected GroovyScriptEngine gse
+    LibraryLoader libLoader
+    String[] scriptRoots = ["src/main/jenkins", "./."]
+    String scriptExtension = "jenkins"
+    Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS"]
+    String baseScriptRoot = "."
+    Binding binding = new Binding()
+    ClassLoader baseClassloader = this.class.classLoader
+
+    PipelineRuntime(String jenkinsFile, String configFile, String library='.') {
         this.jenkinsFile = jenkinsFile
         this.configFile = configFile
-        this.library = library
+        scriptRoots.join(library)
+//        scriptRoots.join(jenkinsFile)
     }
 
 
     void run() throws IllegalAccessException, InstantiationException, IOException {
-        def binding = new Binding()
-        GroovyScriptEngine engine
-        if (library) {
-            engine = new GroovyScriptEngine([toUrl(library), toUrl(jenkinsFile)] as URL[], loader)
-        } else {
-            println "Url jenkinsfile $jenkinsFile"
-            engine = new GroovyScriptEngine([toUrl(jenkinsFile)] as URL[], loader)
-            println "Url jenkinsfile $jenkinsFile"
-        }
 
         if (configFile) {
             Yaml parser = new Yaml()
@@ -38,29 +44,34 @@ class PipelineRuntime implements Runnable {
             println "Binding $example"
 
         }
-//        def script = engine.groovyClassLoader.parseClass('greeter()').newInstance()
-//        script.run()
-        engine.run(toUrl(jenkinsFile).getPath(), binding)
+        gse.run(toFullPath(jenkinsFile), binding)
 
     }
 
-    URL toUrl(String filePath) {
+    String toFullPath(String filePath) {
         def url = new File(filePath).toURI().toURL()
         println "to Url $url"
-        return url
+        return url.getPath()
     }
 
-//    void loadRegisteredScriptExtensions(GroovyClassLoader loader, Path classpath) {
-//        final String[] pe = classpath.list();
-//        try {
-//            for (String file : pe) {
-//                loader.addClasspath(file);
-//            }
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//    }
+    def init() {
+        CompilerConfiguration configuration = new CompilerConfiguration()
+        loader = new GroovyClassLoader(baseClassloader, configuration)
+
+        libLoader = new LibraryLoader(loader, libraries)
+        LibraryAnnotationTransformer libraryTransformer = new LibraryAnnotationTransformer(libLoader)
+        configuration.addCompilationCustomizers(libraryTransformer)
+
+        ImportCustomizer importCustomizer = new ImportCustomizer()
+        imports.each { k, v -> importCustomizer.addImport(k, v) }
+        configuration.addCompilationCustomizers(importCustomizer)
+
+        configuration.setDefaultScriptExtension(scriptExtension)
+        //        configuration.setScriptBaseClass(scriptBaseClass.getName())
+        gse = new GroovyScriptEngine(scriptRoots, loader)
+        gse.setConfig(configuration)
+        return this
+    }
 
 
 }
