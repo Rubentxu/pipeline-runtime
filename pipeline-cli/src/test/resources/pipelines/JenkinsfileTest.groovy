@@ -3,8 +3,11 @@ library('commons')
 
 import static com.pipeline.runtime.dsl.Dsl.pipeline
 import static com.pipeline.runtime.dsl.Dsl.initialize
+import demo.Greeter
 
 
+
+new Greeter().sayHello()
 hello()
 
 initialize(this)

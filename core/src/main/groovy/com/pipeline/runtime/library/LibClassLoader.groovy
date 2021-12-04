@@ -9,45 +9,45 @@ import org.apache.commons.lang3.reflect.MethodUtils;
  *
  * Copied from https://github.com/jenkinsci/workflow-cps-global-lib-plugin/blob/master/src/main/java/org/jenkinsci/plugins/workflow/libs/LibraryStep.java
  */
-class LibClassLoader extends GroovyObjectSupport {
+trait LibClassLoader {
     private String className
-    private PipelineRuntime helper
+//    private PipelineRuntime helper
     Class loadedClass
 
-    LibClassLoader(helper, String className){
-        this.helper = helper
-        this.className = className
-        this.loadedClass = null
-    }
+//    LibClassLoader(helper, String className){
+//        this.helper = helper
+//        this.className = className
+//        this.loadedClass = null
+//    }
+//
+//    LibClassLoader(helper, String className, loadedClass){
+//        this.helper = helper
+//        this.className = className
+//        this.loadedClass = loadedClass
+//    }
 
-    LibClassLoader(helper, String className, loadedClass){
-        this.helper = helper
-        this.className = className
-        this.loadedClass = loadedClass
-    }
 
-    @Override
     Object getProperty(String property) {
 
         if(loadedClass) {
             return loadedClass.getProperties()[property]
         }
 
-        if(!this.className) {
-            return new LibClassLoader(this.helper, property)
-        }
+//        if(!this.className) {
+//            return new LibClassLoader(this.helper, property)
+//        }
 
         if(property =~ /^[A-Z].*/) {
 
-            def gcl = this.helper.getLibLoader().getGroovyClassLoader()
+            def gcl = getLibLoader().getGroovyClassLoader()
             loadedClass = gcl.loadClass( (String) "${this.className}.${property}")
-            return new LibClassLoader(this.helper, "${this.className}.${property}", loadedClass)
+//            return new LibClassLoader(this.helper, "${this.className}.${property}", loadedClass)
         } else {
-            return new LibClassLoader(this.helper, "${this.className}.${property}")
+//            return new LibClassLoader(this.helper, "${this.className}.${property}")
         }
     }
 
-    @Override
+ 
     Object invokeMethod(String name, Object _args) {
         Object[] args = _args as Object[]
         if(loadedClass) {
@@ -59,4 +59,6 @@ class LibClassLoader extends GroovyObjectSupport {
         }
 
     }
+
+   abstract LibraryLoader getLibLoader()
 }

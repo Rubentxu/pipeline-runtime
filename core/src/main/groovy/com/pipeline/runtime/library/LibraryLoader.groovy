@@ -136,7 +136,7 @@ class LibraryLoader {
                     }
                 }
             }
-            record.definedGlobalVars = globalVars
+            record.definedGlobalVars = globalVars as Map<String, Object>
         } catch (Exception e) {
             throw new LibraryLoadingException(e, library, version)
         }

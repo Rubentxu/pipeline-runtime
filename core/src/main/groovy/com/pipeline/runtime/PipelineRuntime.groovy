@@ -4,17 +4,25 @@ import com.pipeline.runtime.library.LibClassLoader
 import com.pipeline.runtime.library.LibraryAnnotationTransformer
 import com.pipeline.runtime.library.LibraryConfiguration
 import com.pipeline.runtime.library.LibraryLoader
+import com.pipeline.runtime.library.MethodSignature
 import groovy.transform.CompileStatic
+import org.apache.commons.io.FilenameUtils
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.MetaClassHelper
 import org.yaml.snakeyaml.Yaml
+
+import java.lang.reflect.Method
 
 import static com.pipeline.runtime.library.LibraryConfiguration.library
 import static com.pipeline.runtime.library.LocalSource.localSource
+import static com.pipeline.runtime.library.MethodSignature.method
 
 
-@CompileStatic
+//@CompileStatic
 class PipelineRuntime implements Runnable {
+    protected static Method SCRIPT_SET_BINDING = Script.getMethod('setBinding', Binding.class)
     private GroovyClassLoader loader
     private String jenkinsFile
     private String configFile
@@ -26,14 +34,14 @@ class PipelineRuntime implements Runnable {
     String scriptExtension = "jenkins"
     Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS"]
     String baseScriptRoot = "."
-    Binding binding = new Binding()
+    Binding binding
     ClassLoader baseClassloader = this.class.classLoader
 
     PipelineRuntime(String jenkinsFile, String configFile, String libraryPath='.') {
         this.jenkinsFile = jenkinsFile
         this.configFile = configFile
         scriptRoots.join(libraryPath)
-//        scriptRoots.join(jenkinsFile)
+        scriptRoots.join(jenkinsFile)
         def library = library().name('commons')
                 .defaultVersion("master")
                 .allowOverride(true)
@@ -63,14 +71,86 @@ class PipelineRuntime implements Runnable {
 
         }
         binding.getVariables().put('library', { String expression ->
-            getLibLoader().loadLibrary(expression)
-            println "$expression libs loaders ${getLibLoader().libRecords}"
-            return new LibClassLoader(this, null)
+
+//            return new LibClassLoader(this, null)
         })
 
-        gse.run(toFullPath(jenkinsFile), binding)
+//        def script = loadScript( FilenameUtils.getName(jenkinsFile), binding)
+        setGlobalVars(binding)
+        def script = gse.createScript(toFullPath(jenkinsFile), binding)
+//        script.withTraits LibClassLoader
+        script.run()
+//        gse.run(toFullPath(jenkinsFile), binding)
 
     }
+
+    Script loadScript(String scriptName, Binding binding) {
+        Objects.requireNonNull(binding, "Binding cannot be null.")
+        Objects.requireNonNull(gse, "GroovyScriptEngine is not initialized: Initialize the helper by calling init().")
+        Class scriptClass = gse.loadScriptByName(scriptName)
+        setGlobalVars(binding)
+        Script script = InvokerHelper.createScript(scriptClass, binding)
+//        InterceptingGCL.interceptClassMethods(script.metaClass, this, binding)
+        return script
+    }
+
+    /**
+     * Sets global variables defined in loaded libraries on the binding
+     * @param binding
+     */
+    public void setGlobalVars(Binding binding) {
+        libLoader.libRecords.values().stream()
+                .flatMap { it.definedGlobalVars.entrySet().stream() }
+                .forEach { e ->
+                    if (e.value instanceof Script) {
+                        Script script = Script.cast(e.value)
+                        // invoke setBinding from method to avoid interception
+                        SCRIPT_SET_BINDING.invoke(script, binding)
+                        script.metaClass.getMethods().findAll { it.name == 'call' }.forEach { m ->
+                            this.registerAllowedMethod(MethodSignature.method(e.value.class.name, m.getNativeParameterTypes()).name,
+                                    { args ->
+                                        // When calling a one argument method with a null argument the
+                                        // Groovy doMethodInvoke appears to incorrectly assume a zero
+                                        // argument call signature for the method yielding an IllegalArgumentException
+                                        if (args == null && m.getNativeParameterTypes().size() == 1) {
+                                            m.doMethodInvoke(e.value, MetaClassHelper.ARRAY_WITH_NULL)
+                                        } else {
+                                            m.doMethodInvoke(e.value, args)
+                                        }
+                                    } )
+                        }
+                    }
+                    binding.setVariable(e.key, e.value)
+                }
+    }
+
+    /**
+     * @param name method name
+     * @param closure method implementation, can be null
+     */
+    void registerAllowedMethod(String name, Closure closure = null) {
+        allowedMethodCallbacks.put(method(name), closure)
+    }
+
+    /**
+     * @param name method name
+     * @param args parameter types
+     * @param closure method implementation, can be null
+     */
+    void registerAllowedMethod(String name, List<Class> args, Closure closure = null) {
+        allowedMethodCallbacks.put(method(name, args.toArray(new Class[args?.size()]) as Class), closure)
+    }
+
+
+    /**
+     * List of allowed methods with default interceptors.
+     * Complete this list in need with {@link #registerAllowedMethod}
+     */
+    protected Map<MethodSignature, Closure> allowedMethodCallbacks = [:]
+//            (method("load", String.class))           : loadInterceptor,
+//            (method("parallel", Map.class))          : parallelInterceptor,
+//            (method("libraryResource", String.class)): libraryResourceInterceptor,
+//    ]
 
     String toFullPath(String filePath) {
         def url = new File(filePath).toURI().toURL()
@@ -94,6 +174,8 @@ class PipelineRuntime implements Runnable {
         //        configuration.setScriptBaseClass(scriptBaseClass.getName())
         gse = new GroovyScriptEngine(scriptRoots, loader)
         gse.setConfig(configuration)
+        getLibLoader().loadLibrary("commons")
+        println "commons libs loaders ${getLibLoader().libRecords}"
         return this
     }
 

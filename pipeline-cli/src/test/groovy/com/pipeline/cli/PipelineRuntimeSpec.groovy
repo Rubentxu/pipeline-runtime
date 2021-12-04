@@ -17,7 +17,7 @@ class PipelineRuntimeSpec {
 
     @Test
     void testMyApp() throws Exception {
-        def filePath = getClass().getClassLoader().getResource('pipelines/JenkinsfileTest').getPath()
+        def filePath = getClass().getClassLoader().getResource('pipelines/JenkinsfileTest.groovy').getPath()
         def configPath = getClass().getClassLoader().getResource('pipelines/config.yaml').getPath()
         def scriptsPath = getClass().getClassLoader().getResource('scripts/').getPath()
         new CommandLine(new PipelineCLI()).execute("--jenkinsfile=$filePath", "-c=$configPath", "-l=$scriptsPath");
