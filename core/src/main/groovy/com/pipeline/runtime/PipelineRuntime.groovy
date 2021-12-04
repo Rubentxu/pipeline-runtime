@@ -1,15 +1,12 @@
 package com.pipeline.runtime
 
-import com.pipeline.runtime.library.LibClassLoader
+
 import com.pipeline.runtime.library.LibraryAnnotationTransformer
 import com.pipeline.runtime.library.LibraryConfiguration
 import com.pipeline.runtime.library.LibraryLoader
 import com.pipeline.runtime.library.MethodSignature
-import groovy.transform.CompileStatic
-import org.apache.commons.io.FilenameUtils
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MetaClassHelper
 import org.yaml.snakeyaml.Yaml
 
@@ -18,7 +15,6 @@ import java.lang.reflect.Method
 import static com.pipeline.runtime.library.LibraryConfiguration.library
 import static com.pipeline.runtime.library.LocalSource.localSource
 import static com.pipeline.runtime.library.MethodSignature.method
-
 
 //@CompileStatic
 class PipelineRuntime implements Runnable {
@@ -41,7 +37,7 @@ class PipelineRuntime implements Runnable {
         this.jenkinsFile = jenkinsFile
         this.configFile = configFile
         scriptRoots.add(libraryPath)
-//        scriptRoots.add(FilenameUtils.getPath(jenkinsFile))
+
         def library = library().name('commons')
                 .defaultVersion("master")
                 .allowOverride(true)
@@ -75,23 +71,10 @@ class PipelineRuntime implements Runnable {
 //            return new LibClassLoader(this, null)
         })
 
-//        def script = loadScript( FilenameUtils.getName(jenkinsFile), binding)
         setGlobalVars(binding)
         def script = gse.createScript(toFullPath(jenkinsFile), binding)
-//        script.withTraits LibClassLoader
         script.run()
-//        gse.run(toFullPath(jenkinsFile), binding)
 
-    }
-
-    Script loadScript(String scriptName, Binding binding) {
-        Objects.requireNonNull(binding, "Binding cannot be null.")
-        Objects.requireNonNull(gse, "GroovyScriptEngine is not initialized: Initialize the helper by calling init().")
-        Class scriptClass = gse.loadScriptByName(scriptName)
-        setGlobalVars(binding)
-        Script script = InvokerHelper.createScript(scriptClass, binding)
-//        InterceptingGCL.interceptClassMethods(script.metaClass, this, binding)
-        return script
     }
 
     /**
@@ -132,15 +115,6 @@ class PipelineRuntime implements Runnable {
         allowedMethodCallbacks.put(method(name), closure)
     }
 
-    /**
-     * @param name method name
-     * @param args parameter types
-     * @param closure method implementation, can be null
-     */
-    void registerAllowedMethod(String name, List<Class> args, Closure closure = null) {
-        allowedMethodCallbacks.put(method(name, args.toArray(new Class[args?.size()]) as Class), closure)
-    }
-
 
     /**
      * List of allowed methods with default interceptors.
@@ -171,7 +145,6 @@ class PipelineRuntime implements Runnable {
         configuration.addCompilationCustomizers(importCustomizer)
 
         configuration.setDefaultScriptExtension(scriptExtension)
-        //        configuration.setScriptBaseClass(scriptBaseClass.getName())
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(configuration)
         getLibLoader().loadLibrary("commons")
