@@ -2,7 +2,7 @@
 ```bash
 $ gradle examples:runScript
 $ gradle clean pipeline-cli:nativeCompile
-$ pipeline-cli/build/native/nativeCompile/application --jenkinsfile=pipeline-cli/src/test/resources/pipelines/JenkinsfileTest.groovy \
+$ pipeline-cli/build/native/nativeCompile/pipeline-cli -j=pipeline-cli/src/test/resources/pipelines/JenkinsfileTest.groovy \
  -c=pipeline-cli/src/test/resources/pipelines/config.yaml \
  -l=pipeline-cli/src/test/resources/scripts
 ```

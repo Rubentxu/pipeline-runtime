@@ -51,7 +51,7 @@ graalvmNative {
         main {
             useFatJar = false
             // Main options
-            imageName = 'application' // The name of the native image, defaults to the project name
+//            imageName = 'pipelineCli' // The name of the native image, defaults to the project name
             mainClass = 'com.pipeline.cli.PipelineCLI' // The main class to use, defaults to the application.mainClass
             debug = true // Determines if debug info should be generated, defaults to false
             verbose = true // Add verbose output, defaults to false
