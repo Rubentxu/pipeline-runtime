@@ -30,7 +30,7 @@ class PipelineRuntime implements Runnable {
     Map<String, LibraryConfiguration> libraries = [:]
     protected GroovyScriptEngine gse
     LibraryLoader libLoader
-    String[] scriptRoots = ["src/main/jenkins", "./."]
+    List<String> scriptRoots = []
     String scriptExtension = "jenkins"
     Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS"]
     String baseScriptRoot = "."
@@ -40,8 +40,8 @@ class PipelineRuntime implements Runnable {
     PipelineRuntime(String jenkinsFile, String configFile, String libraryPath='.') {
         this.jenkinsFile = jenkinsFile
         this.configFile = configFile
-        scriptRoots.join(libraryPath)
-        scriptRoots.join(jenkinsFile)
+        scriptRoots.add(libraryPath)
+//        scriptRoots.add(FilenameUtils.getPath(jenkinsFile))
         def library = library().name('commons')
                 .defaultVersion("master")
                 .allowOverride(true)
@@ -172,7 +172,7 @@ class PipelineRuntime implements Runnable {
 
         configuration.setDefaultScriptExtension(scriptExtension)
         //        configuration.setScriptBaseClass(scriptBaseClass.getName())
-        gse = new GroovyScriptEngine(scriptRoots, loader)
+        gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(configuration)
         getLibLoader().loadLibrary("commons")
         println "commons libs loaders ${getLibLoader().libRecords}"

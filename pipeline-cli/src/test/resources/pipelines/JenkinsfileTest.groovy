@@ -7,7 +7,7 @@ import demo.Greeter
 
 
 
-new Greeter().sayHello()
+println new Greeter().sayHello()
 hello()
 
 initialize(this)

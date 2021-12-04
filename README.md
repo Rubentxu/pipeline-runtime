@@ -1,8 +1,8 @@
 ## Ejecutar pipeline de ejemplo con:
 ```bash
 $ gradle examples:runScript
-$ gradle clean pipeline-cli:nativeBuild
-$ pipeline-cli/build/native/nativeBuild/application --jenkinsfile=pipeline-cli/src/test/resources/pipelines/JenkinsfileTest \
+$ gradle clean pipeline-cli:nativeCompile
+$ pipeline-cli/build/native/nativeCompile/application --jenkinsfile=pipeline-cli/src/test/resources/pipelines/JenkinsfileTest.groovy \
  -c=pipeline-cli/src/test/resources/pipelines/config.yaml \
  -l=pipeline-cli/src/test/resources/scripts
 ```
