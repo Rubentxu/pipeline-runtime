@@ -7,6 +7,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
     maven { url 'https://repo.jenkins-ci.org/releases/' }
     maven { url 'https://repo.jenkins-ci.org/public' }
 
@@ -19,15 +20,15 @@ java {
 
 dependencies {
     implementation project(":core")
-    implementation 'org.codehaus.groovy:groovy-all:2.5.15'
+    implementation 'org.codehaus.groovy:groovy-all:3.0.9'
     implementation 'info.picocli:picocli:4.6.2'
     annotationProcessor 'info.picocli:picocli-codegen:4.6.2'
 
     implementation 'org.slf4j:slf4j-simple:1.7.28'
 
-    testImplementation 'org.spockframework:spock-core:1.1-groovy-2.4'
-    testImplementation 'junit:junit:4.13.1'
-    testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
+    testImplementation 'org.spockframework:spock-core:2.1-M2-groovy-3.0'
+//    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
+//    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'org.mockito:mockito-core:2.+'
 
 }

@@ -1,17 +1,21 @@
 package pipelines
 library('commons')
 
-import static com.pipeline.runtime.dsl.Dsl.pipeline
-import static com.pipeline.runtime.dsl.Dsl.initialize
+
 import demo.Greeter
 
 
-
+println "Groovy versión :: ${GroovySystem.getVersion()}"
 println new Greeter().sayHello()
 hello()
 
 initialize(this)
 //println new Greeter().sayHello()
+
+
+node {
+    checkout scm
+}
 
 println '''
    ___                                ___ _            _ _

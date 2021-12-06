@@ -1,10 +1,10 @@
-package com.pipeline.runtime.dsl.traits
+package com.pipeline.runtime.extensions
 
 
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
 
-trait CredentialsManagement extends Environment {
+trait Credentials {
     private final List credentials = []
 
     def usernamePassword(@NamedParams([
@@ -25,7 +25,7 @@ trait CredentialsManagement extends Environment {
         this.env[params.variable] = secret.text
     }
 
-    def getCredentialsStore() {
+    def getCredentials() {
         println "Store Credentials $credentials"
         return this.credentials
     }

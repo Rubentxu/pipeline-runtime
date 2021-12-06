@@ -1,4 +1,4 @@
-package com.pipeline.runtime.dsl.traits
+package com.pipeline.runtime.extensions
 
 import com.pipeline.runtime.dsl.PipelineDsl
 import com.pipeline.runtime.dsl.StageDsl

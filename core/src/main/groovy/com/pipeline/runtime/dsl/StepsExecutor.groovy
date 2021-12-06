@@ -1,24 +1,21 @@
 package com.pipeline.runtime.dsl
 
-import com.pipeline.runtime.dsl.traits.CredentialsManagement
-import com.pipeline.runtime.dsl.traits.Shell
+import com.pipeline.runtime.extensions.StepsExtensions
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-class StepsExecutor implements Shell, CredentialsManagement {
+class StepsExecutor  extends StepsExtensions {
     private ConcurrentMap<String, Object> dynamicProps
-    final ConcurrentMap<String, String> env = [:] as ConcurrentHashMap
+
 
     StepsExecutor() {
         dynamicProps = [
-                params: [:],
                 configFileProvider: this.&defaultMethodClosure,
                 ansiColor: this.&defaultMethodClosure,
                 container: this.&defaultMethodClosure,
                 node: this.&defaultMethodClosure,
                 dir: this.&defaultMethodClosure,
-                node: this.&defaultMethodClosure,
                 withCredentials: this.&defaultMethodClosure,
         ] as ConcurrentHashMap
 
@@ -42,30 +39,37 @@ class StepsExecutor implements Shell, CredentialsManagement {
         throw new Exception(message)
     }
 
-    void setProperty(String propName, val) {
-        dynamicProps[propName] = val
-    }
-
-    def getProperty(String propName) {
-        switch (propName) {
-            case "steps":
-                return this
-            case "env":
-                return this.env
-            case "credentials":
-                return this.getCredentialsStore()
-            default:
-                return dynamicProps[propName]
-        }
-
+    @Override
+    Object run() {
+        return null
     }
 
     def methodMissing(String methodName, args) {
         def prop = dynamicProps[methodName]
+
         if (prop instanceof Closure) {
-            return prop(*args)
+            return callClosure(prop, args)
         } else {
             throw new Exception("\u001B[1;31m************ Method Missing with name $methodName and args $args **************\u001B[0m")
         }
     }
+
+    /**
+     * Call closure by handling spreading of parameter default values
+     *
+     * @param closure to call
+     * @param args array of arguments passed to this closure call. Is null by default.
+     * @return result of the closure call
+     */
+    Object callClosure(Closure closure, Object[] args = null) {
+        if (!args) {
+            return closure.call()
+        } else if (args.size() > closure.maximumNumberOfParameters) {
+            return closure.call(args)
+        } else {
+            return closure.call(*args)
+        }
+    }
+
+
 }

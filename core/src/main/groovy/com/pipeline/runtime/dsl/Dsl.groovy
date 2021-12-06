@@ -22,16 +22,52 @@ class Dsl {
         closure.call()
     }
 
+    static void node(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {
+        final PipelineDsl dsl = new PipelineDsl()
+
+        closure.delegate = dsl
+        closure.resolveStrategy = DELEGATE_ONLY
+        closure.call()
+    }
+
 }
+
+
+trait NodeDsl {
+    final Placeholder any = Placeholder.ANY
+
+    void node(@DelegatesTo(value = StagesDsl, strategy = DELEGATE_ONLY) final Closure closure) {
+        this.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
+        this.credentials.addAll(Dsl.script.getBinding().getVariables()?.credentials)
+        this.configureScm(Dsl.script.getBinding().getVariables()?.scmConfig)
+        final StagesDsl dsl = new StagesDsl()
+
+        closure.delegate = dsl
+        closure.resolveStrategy = DELEGATE_ONLY
+        closure.call()
+
+        dsl.stages.each { stage ->
+            stage.run()
+        }
+    }
+
+    enum Placeholder {
+        ANY
+    }
+}
+
+
+
 
 class PipelineDsl {
     final Placeholder any = Placeholder.ANY
-    static final StepsExecutor steps = new StepsExecutor()
-
+    static StepsExecutor steps
 
     PipelineDsl() {
+        steps = new StepsExecutor()
         PipelineDsl.steps.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
         PipelineDsl.steps.credentials.addAll(Dsl.script.getBinding().getVariables()?.credentials)
+        PipelineDsl.steps.configureScm(Dsl.script.getBinding().getVariables()?.scmConfig)
     }
 
     void agent(final Placeholder any) {

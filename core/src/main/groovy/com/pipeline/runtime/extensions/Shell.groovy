@@ -1,4 +1,4 @@
-package com.pipeline.runtime.dsl.traits
+package com.pipeline.runtime.extensions
 
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams

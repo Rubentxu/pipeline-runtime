@@ -1,6 +1,7 @@
 package com.pipeline.runtime
 
-
+import com.pipeline.runtime.dsl.StepsExecutor
+import com.pipeline.runtime.extensions.StepsExtensions
 import com.pipeline.runtime.library.LibraryAnnotationTransformer
 import com.pipeline.runtime.library.LibraryConfiguration
 import com.pipeline.runtime.library.LibraryLoader
@@ -29,11 +30,18 @@ class PipelineRuntime implements Runnable {
     List<String> scriptRoots = []
     String scriptExtension = "jenkins"
     Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS"]
+    Map<String, String> staticImport = [
+            "pipeline"  : "com.pipeline.runtime.dsl.Dsl",
+            "initialize": "com.pipeline.runtime.dsl.Dsl",
+            "scm": "com.pipeline.runtime.extensions.GitSCMSteps"
+    ]
+
     String baseScriptRoot = "."
     Binding binding
     ClassLoader baseClassloader = this.class.classLoader
+    Class scriptBaseClass = StepsExecutor.class
 
-    PipelineRuntime(String jenkinsFile, String configFile, String libraryPath='.') {
+    PipelineRuntime(String jenkinsFile, String configFile, String libraryPath = '.') {
         this.jenkinsFile = jenkinsFile
         this.configFile = configFile
         scriptRoots.add(libraryPath)
@@ -100,7 +108,7 @@ class PipelineRuntime implements Runnable {
                                         } else {
                                             m.doMethodInvoke(e.value, args)
                                         }
-                                    } )
+                                    })
                         }
                     }
                     binding.setVariable(e.key, e.value)
@@ -142,14 +150,51 @@ class PipelineRuntime implements Runnable {
 
         ImportCustomizer importCustomizer = new ImportCustomizer()
         imports.each { k, v -> importCustomizer.addImport(k, v) }
+        staticImport.each { k, v -> importCustomizer.addStaticImport(v, k) }
         configuration.addCompilationCustomizers(importCustomizer)
 
         configuration.setDefaultScriptExtension(scriptExtension)
+        configuration.setScriptBaseClass(scriptBaseClass.getName())
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(configuration)
         getLibLoader().loadLibrary("commons")
         println "commons libs loaders ${getLibLoader().libRecords}"
         return this
+    }
+
+    /**
+     * Helper for adding a params value in tests
+     */
+    void addParam(String name, Object val, Boolean overWrite = false) {
+        if (!binding.hasVariable('params')) {
+            binding.setVariable('params', [:])
+        }
+
+        Map params = binding.getVariable('params') as Map
+        if (params[name] == null || overWrite) {
+            params[name] = val
+        }
+    }
+
+    /**
+     * Helper for adding a environment value in tests
+     */
+    void addEnvVar(String name, String val) {
+        if (!binding.hasVariable('env')) {
+            binding.setVariable('env', [:])
+        }
+
+        Map env = binding.getVariable('env') as Map
+        env[name] = val
+    }
+
+    void addCredential(String key, String val) {
+        if (!binding.hasVariable('credentials')) {
+            binding.setVariable('credentials', [:])
+        }
+
+        Map credentials = binding.getVariable('credentials') as Map
+        credentials[key] = val
     }
 
 

@@ -1,4 +1,4 @@
-package com.pipeline.runtime.dsl.traits
+package com.pipeline.runtime.extensions
 
 
 import org.eclipse.jgit.api.Git
@@ -9,8 +9,14 @@ trait GitSCMSteps {
         node("default", closure)
     }
 
+    static Scm scm
+
+    def configureScm(Map map) {
+        this.scm = new Scm(map)
+    }
+
     def checkout(final Scm scm) {
-        File localPath = File.createTempFile("build/workspace", "");
+        File localPath = File.createTempFile(this.getWorkingDir(), "");
 
         Files.delete(localPath.toPath())
 
@@ -32,6 +38,10 @@ class Scm  {
     List<Extension> extensions = [:]
     List<Branch> branches = [[ name: 'master']]
 
+    Scm(Map config) {
+        this.userRemoteConfigs = config.userRemoteConfigs.collect{ it as UserRemoteConfigs }
+        this.branches = config.branches as List<Branch>
+    }
 }
 
 class Branch {

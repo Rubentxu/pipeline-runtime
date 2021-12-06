@@ -9,5 +9,20 @@ credentials:
     type: secret_text
     text: e_rcabre-token
 
+scmConfig:
+  userRemoteConfigs:
+    - name: gradle-simple
+      url: https://github.com/jitpack/gradle-simple
+      refspec: ''
+      credentialsId: ''
+  branches:
+    - name: master
+  extensions:
+    sparseCheckoutPaths: []
+    localBranch: ''
+    relativeTargetDirectory: ''
+    cleanCheckout: true
+
+
 environment:
   MENSAJE: Hola Mundo
