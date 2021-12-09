@@ -1,6 +1,7 @@
 package com.pipeline.runtime.extensions
 
 import com.pipeline.runtime.dsl.StepsExecutor
+import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
 import java.nio.file.Files
 import java.nio.file.Path
@@ -18,14 +19,16 @@ class GitSCMSteps {
     }
 
     static def checkout(StepsExecutor self, final Scm scm) {
+        println "+ checkout"
         File localPath = File.createTempFile(self.getWorkingDir(), "");
 
         Files.delete(localPath.toPath())
 
         def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
-        Path targetPath = Paths.get("build/workspace/${targetDirectory?:''}")
+        Path targetPath = Paths.get("${self.workingDir}/${self.env.JOB_NAME}/${targetDirectory?:''}")
+
         if(Files.exists(targetPath)) {
-            Files.delete(targetPath)
+            FileUtils.cleanDirectory(targetPath.toFile())
         }
 
         Git.cloneRepository()

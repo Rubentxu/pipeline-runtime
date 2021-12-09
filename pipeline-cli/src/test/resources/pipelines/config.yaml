@@ -25,4 +25,5 @@ scmConfig:
 
 
 environment:
+  JOB_NAME: Ejemplo-pipeline
   MENSAJE: Hola Mundo

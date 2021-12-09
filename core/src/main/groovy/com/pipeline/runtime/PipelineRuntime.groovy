@@ -1,7 +1,6 @@
 package com.pipeline.runtime
 
 import com.pipeline.runtime.dsl.StepsExecutor
-import com.pipeline.runtime.extensions.StepsExtensions
 import com.pipeline.runtime.library.LibraryAnnotationTransformer
 import com.pipeline.runtime.library.LibraryConfiguration
 import com.pipeline.runtime.library.LibraryLoader
@@ -31,8 +30,8 @@ class PipelineRuntime implements Runnable {
     String scriptExtension = "jenkins"
     Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS"]
     Map<String, String> staticImport = [
-            "pipeline"  : "com.pipeline.runtime.dsl.Dsl",
-            "initialize": "com.pipeline.runtime.dsl.Dsl",
+            "pipeline"  : "com.pipeline.runtime.Job",
+            "initialize": "com.pipeline.runtime.Job",
             "scm": "com.pipeline.runtime.extensions.GitSCMSteps"
     ]
 
@@ -81,7 +80,9 @@ class PipelineRuntime implements Runnable {
 
         setGlobalVars(binding)
         def script = gse.createScript(toFullPath(jenkinsFile), binding)
+        Job.script = script
         script.run()
+
 
     }
 

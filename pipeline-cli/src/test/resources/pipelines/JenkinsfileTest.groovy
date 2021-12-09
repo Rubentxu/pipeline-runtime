@@ -9,7 +9,6 @@ println "Groovy versión :: ${GroovySystem.getVersion()}"
 println new Greeter().sayHello()
 hello()
 
-initialize(this)
 //println new Greeter().sayHello()
 
 
@@ -42,11 +41,11 @@ pipeline {
                 sh(script: 'date +%Y-%m-%d', returnStdout: false)
                 echo "Groovy rocks!"
                 echo "env.SOME_STRING=${env.SOME_STRING}"
-                echo "Mensaje ${env.MENSAJE}"
+                echo "SOME_STRING=${SOME_STRING}"
+                echo "Mensaje ${MENSAJE}"
 
                 sh 'echo $PATH'
                 sh '''echo "Who I'm $SHELL"'''
-                echo String.greeting()
                 checkout scm
             }
         }
@@ -60,8 +59,8 @@ pipeline {
                     echo "Pintamos el token: <${env.TOKEN}>"
                 }
                 withCredentials([ usernamePassword(credentialsId: 'gitlab', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    echo "Pintamos el USER: <${env.USER}>"
-                    echo "Pintamos el PASS: <${env.PASS}>"
+                    echo "Pintamos el USER: <${USER}>"
+                    echo "Pintamos el PASS: <${PASS}>"
                 }
             }
         }
