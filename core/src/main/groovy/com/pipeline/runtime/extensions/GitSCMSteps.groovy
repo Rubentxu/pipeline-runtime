@@ -25,7 +25,7 @@ class GitSCMSteps {
         Files.delete(localPath.toPath())
 
         def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
-        Path targetPath = Paths.get("${self.workingDir}/${self.env.JOB_NAME}/${targetDirectory?:''}")
+        Path targetPath = Paths.get("${self.workingDir}/${targetDirectory?:''}")
 
         if(Files.exists(targetPath)) {
             FileUtils.cleanDirectory(targetPath.toFile())

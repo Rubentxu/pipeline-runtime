@@ -37,21 +37,13 @@ trait NodeDsl {
 //@CompileStatic
 class PipelineDsl {
     final Placeholder any = Placeholder.ANY
-    static StepsExecutor steps
-
-    PipelineDsl() {
-        steps = new StepsExecutor()
-        steps.env.putAll(Job.script.getBinding().getVariables()?.environment)
-        steps.credentials.addAll(Job.script.getBinding().getVariables()?.credentials)
-        steps.configureScm(Job.script.getBinding().getVariables()?.scmConfig)
-    }
 
     void agent(final Placeholder any) {
         println "Running pipeline using any available agent..."
     }
 
     void environment(@DelegatesTo(value = Map, strategy = DELEGATE_FIRST) final Closure closure) {
-        steps.env.with(closure)
+        Job.steps.env.with(closure)
     }
 
     void stages(@DelegatesTo(value = StagesDsl, strategy = DELEGATE_ONLY) final Closure closure) {
@@ -104,7 +96,7 @@ class StageDsl {
             @DelegatesTo(value = StepsExecutor, strategy = DELEGATE_ONLY)
             @ClosureParams(value = SimpleType, options = ["java.util.Map"]) final Closure closure) {
 
-        closure.delegate = PipelineDsl.steps
+        closure.delegate = Job.steps
         closure.resolveStrategy = DELEGATE_ONLY
         closure.call()
     }

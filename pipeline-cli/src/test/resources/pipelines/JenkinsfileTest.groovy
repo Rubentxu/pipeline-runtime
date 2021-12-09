@@ -38,6 +38,7 @@ pipeline {
         stage("Build") {
             steps {
                 sh "ls -la"
+                sh 'pwd'
                 sh(script: 'date +%Y-%m-%d', returnStdout: false)
                 echo "Groovy rocks!"
                 echo "env.SOME_STRING=${env.SOME_STRING}"
@@ -47,11 +48,13 @@ pipeline {
                 sh 'echo $PATH'
                 sh '''echo "Who I'm $SHELL"'''
                 checkout scm
+                sh "ls -la"
+                sh 'pwd'
             }
         }
         stage("Test") {
             steps {
-                sh "gradle -v"
+                sh "gradle assemble  --stacktrace"
                 sh "java -version"
                 sh "mvn -version"
                 withCredentials([ string(credentialsId: 'gitlab_token', variable: 'TOKEN')

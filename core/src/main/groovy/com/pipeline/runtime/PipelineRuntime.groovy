@@ -163,40 +163,6 @@ class PipelineRuntime implements Runnable {
         return this
     }
 
-    /**
-     * Helper for adding a params value in tests
-     */
-    void addParam(String name, Object val, Boolean overWrite = false) {
-        if (!binding.hasVariable('params')) {
-            binding.setVariable('params', [:])
-        }
-
-        Map params = binding.getVariable('params') as Map
-        if (params[name] == null || overWrite) {
-            params[name] = val
-        }
-    }
-
-    /**
-     * Helper for adding a environment value in tests
-     */
-    void addEnvVar(String name, String val) {
-        if (!binding.hasVariable('env')) {
-            binding.setVariable('env', [:])
-        }
-
-        Map env = binding.getVariable('env') as Map
-        env[name] = val
-    }
-
-    void addCredential(String key, String val) {
-        if (!binding.hasVariable('credentials')) {
-            binding.setVariable('credentials', [:])
-        }
-
-        Map credentials = binding.getVariable('credentials') as Map
-        credentials[key] = val
-    }
 
 
 }
