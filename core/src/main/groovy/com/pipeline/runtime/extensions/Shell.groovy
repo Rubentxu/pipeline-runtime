@@ -1,25 +1,20 @@
 package com.pipeline.runtime.extensions
 
+import com.pipeline.runtime.dsl.StepsExecutor
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
 
-/*
-  Ejemplo
-  Shell shell = new Shell {currentDir: new File{"path/temp"}}
-  shell.environment["GREETINGS"] = "Hola"
-  print shell.runAndGet('echo $GREETINS')
- */
 
-trait Shell {
-    private File currentDir = new File('.')
-    private Map environment = [*        : System.env,
+class Shell {
+    static private File currentDir = new File('.')
+    static private Map environment = [*        : System.env,
 
     ]
     long timeout = 15000
     boolean redirectErrorStream = false
 
 
-    Process run(String command) {
+    private static Process run(String command) {
 
         if(environment.JAVA_HOME) {
             environment.PATH= "${environment.JAVA_HOME}/bin:${environment.PATH}"
@@ -37,7 +32,7 @@ trait Shell {
 
     }
 
-    Map runAndGet(String command) {
+    private static Map runAndGet(String command) {
         def sout = new StringBuilder(), serr = new StringBuilder()
         def proc = run(command)
         proc.consumeProcessOutput(sout, serr)
@@ -45,11 +40,11 @@ trait Shell {
         return [sout: sout, serr: serr, exitValue: proc.exitValue()]
     }
 
-    void sh(final String script) {
-        sh(script: script, returnStdout: false)
+    static void sh(StepsExecutor self,final String script) {
+        sh(self,[script: script, returnStdout: false])
     }
 
-    Object sh(@NamedParams([
+    static Object sh(StepsExecutor self, @NamedParams([
             @NamedParam(value = "script", type = String, required = true),
             @NamedParam(value = "returnStdout", type = Boolean)
     ]) final Map param) {

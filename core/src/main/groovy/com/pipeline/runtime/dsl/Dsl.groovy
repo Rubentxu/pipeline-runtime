@@ -65,9 +65,9 @@ class PipelineDsl {
 
     PipelineDsl() {
         steps = new StepsExecutor()
-        PipelineDsl.steps.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
-        PipelineDsl.steps.credentials.addAll(Dsl.script.getBinding().getVariables()?.credentials)
-        PipelineDsl.steps.configureScm(Dsl.script.getBinding().getVariables()?.scmConfig)
+        steps.env.putAll(Dsl.script.getBinding().getVariables()?.environment)
+        steps.credentials.addAll(Dsl.script.getBinding().getVariables()?.credentials)
+        steps.configureScm(Dsl.script.getBinding().getVariables()?.scmConfig)
     }
 
     void agent(final Placeholder any) {

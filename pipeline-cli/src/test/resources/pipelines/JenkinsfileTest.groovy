@@ -13,9 +13,9 @@ initialize(this)
 //println new Greeter().sayHello()
 
 
-node {
-    checkout scm
-}
+//node {
+//    checkout scm
+//}
 
 println '''
    ___                                ___ _            _ _
@@ -46,7 +46,8 @@ pipeline {
 
                 sh 'echo $PATH'
                 sh '''echo "Who I'm $SHELL"'''
-
+                echo String.greeting()
+                checkout scm
             }
         }
         stage("Test") {

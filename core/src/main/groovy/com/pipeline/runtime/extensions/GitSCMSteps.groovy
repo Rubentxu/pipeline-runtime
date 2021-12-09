@@ -1,32 +1,38 @@
 package com.pipeline.runtime.extensions
 
-
+import com.pipeline.runtime.dsl.StepsExecutor
 import org.eclipse.jgit.api.Git
 import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
-trait GitSCMSteps {
-    void node(final Closure closure) {
-        node("default", closure)
-    }
-
+class GitSCMSteps {
     static Scm scm
 
-    def configureScm(Map map) {
-        this.scm = new Scm(map)
+    static def getScm(StepsExecutor self) {
+        return scm
     }
 
-    def checkout(final Scm scm) {
-        File localPath = File.createTempFile(this.getWorkingDir(), "");
+    static def configureScm(StepsExecutor self, Map map) {
+        scm = new Scm(map)
+    }
+
+    static def checkout(StepsExecutor self, final Scm scm) {
+        File localPath = File.createTempFile(self.getWorkingDir(), "");
 
         Files.delete(localPath.toPath())
 
         def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
-        targetDirectory = "build/workspace/${targetDirectory?:''}"
+        Path targetPath = Paths.get("build/workspace/${targetDirectory?:''}")
+        if(Files.exists(targetPath)) {
+            Files.delete(targetPath)
+        }
+
         Git.cloneRepository()
                 .setURI(scm.userRemoteConfigs[0].url)
-                .setDirectory(new File(targetDirectory))
-                .setBranchesToClone(scm.branches.collect {it.name })
-                .setBranch(scm.branches[0].name)
+                .setDirectory(targetPath.toFile())
+                .setBranchesToClone(scm.branches.collect {"refs/heads/${it.name}".toString() })
+                .setBranch("refs/heads/${scm.branches[0].name}".toString())
                 .call()
     }
 }
@@ -34,12 +40,18 @@ trait GitSCMSteps {
 
 class Scm  {
     String $class = 'GitSCM'
-    List<UserRemoteConfigs> userRemoteConfigs = []
-    List<Extension> extensions = [:]
-    List<Branch> branches = [[ name: 'master']]
+    List<UserRemoteConfigs> userRemoteConfigs
+    List<Extension> extensions
+    List<Branch> branches
 
-    Scm(Map config) {
-        this.userRemoteConfigs = config.userRemoteConfigs.collect{ it as UserRemoteConfigs }
+    Scm(config) {
+        this.userRemoteConfigs = config.userRemoteConfigs.collect{
+            new UserRemoteConfigs(url: it.url,
+                    name: it.name,
+                    refspec: it.refspec,
+                    credentialsId: it.credentialsId
+            )
+        }
         this.branches = config.branches as List<Branch>
     }
 }
