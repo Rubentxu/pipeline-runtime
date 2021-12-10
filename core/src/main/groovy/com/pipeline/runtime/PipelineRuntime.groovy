@@ -1,20 +1,19 @@
 package com.pipeline.runtime
 
-import com.pipeline.runtime.dsl.StepsExecutor
+
+import com.pipeline.runtime.library.LibClassLoader
 import com.pipeline.runtime.library.LibraryAnnotationTransformer
 import com.pipeline.runtime.library.LibraryConfiguration
 import com.pipeline.runtime.library.LibraryLoader
-import com.pipeline.runtime.library.MethodSignature
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.codehaus.groovy.runtime.MetaClassHelper
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.yaml.snakeyaml.Yaml
 
 import java.lang.reflect.Method
 
 import static com.pipeline.runtime.library.LibraryConfiguration.library
 import static com.pipeline.runtime.library.LocalSource.localSource
-import static com.pipeline.runtime.library.MethodSignature.method
 
 //@CompileStatic
 class PipelineRuntime implements Runnable {
@@ -28,7 +27,7 @@ class PipelineRuntime implements Runnable {
     LibraryLoader libLoader
     List<String> scriptRoots = []
     String scriptExtension = "jenkins"
-    Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS"]
+    Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
     Map<String, String> staticImport = [
             "pipeline"  : "com.pipeline.runtime.Job",
             "initialize": "com.pipeline.runtime.Job",
@@ -74,17 +73,26 @@ class PipelineRuntime implements Runnable {
 
         }
         binding.getVariables().put('library', { String expression ->
-
-//            return new LibClassLoader(this, null)
+            return new LibClassLoader(this, null)
         })
 
-        setGlobalVars(binding)
-        def script = gse.createScript(toFullPath(jenkinsFile), binding)
+        def script = loadScript(toFullPath(jenkinsFile), binding)
         Job.script = script
         script.run()
 
 
     }
+
+
+    Script loadScript(String scriptName, Binding binding) {
+        Objects.requireNonNull(binding, "Binding cannot be null.")
+        Objects.requireNonNull(gse, "GroovyScriptEngine is not initialized: Initialize the helper by calling init().")
+        Class scriptClass = gse.loadScriptByName(scriptName)
+        setGlobalVars(binding)
+        Script script = InvokerHelper.createScript(scriptClass, binding)
+        return script
+    }
+
 
     /**
      * Sets global variables defined in loaded libraries on the binding
@@ -98,42 +106,11 @@ class PipelineRuntime implements Runnable {
                         Script script = Script.cast(e.value)
                         // invoke setBinding from method to avoid interception
                         SCRIPT_SET_BINDING.invoke(script, binding)
-                        script.metaClass.getMethods().findAll { it.name == 'call' }.forEach { m ->
-                            this.registerAllowedMethod(MethodSignature.method(e.value.class.name, m.getNativeParameterTypes()).name,
-                                    { args ->
-                                        // When calling a one argument method with a null argument the
-                                        // Groovy doMethodInvoke appears to incorrectly assume a zero
-                                        // argument call signature for the method yielding an IllegalArgumentException
-                                        if (args == null && m.getNativeParameterTypes().size() == 1) {
-                                            m.doMethodInvoke(e.value, MetaClassHelper.ARRAY_WITH_NULL)
-                                        } else {
-                                            m.doMethodInvoke(e.value, args)
-                                        }
-                                    })
-                        }
                     }
                     binding.setVariable(e.key, e.value)
                 }
     }
 
-    /**
-     * @param name method name
-     * @param closure method implementation, can be null
-     */
-    void registerAllowedMethod(String name, Closure closure = null) {
-        allowedMethodCallbacks.put(method(name), closure)
-    }
-
-
-    /**
-     * List of allowed methods with default interceptors.
-     * Complete this list in need with {@link #registerAllowedMethod}
-     */
-    protected Map<MethodSignature, Closure> allowedMethodCallbacks = [:]
-//            (method("load", String.class))           : loadInterceptor,
-//            (method("parallel", Map.class))          : parallelInterceptor,
-//            (method("libraryResource", String.class)): libraryResourceInterceptor,
-//    ]
 
     String toFullPath(String filePath) {
         def url = new File(filePath).toURI().toURL()

@@ -4,27 +4,23 @@ import com.pipeline.runtime.PipelineRuntime
 import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
-/**
- * Kind of proxy object to create instances of library's classes
- *
- * Copied from https://github.com/jenkinsci/workflow-cps-global-lib-plugin/blob/master/src/main/java/org/jenkinsci/plugins/workflow/libs/LibraryStep.java
- */
-trait LibClassLoader {
+
+class LibClassLoader {
     private String className
-//    private PipelineRuntime helper
+    private PipelineRuntime pruntime
     Class loadedClass
 
-//    LibClassLoader(helper, String className){
-//        this.helper = helper
-//        this.className = className
-//        this.loadedClass = null
-//    }
-//
-//    LibClassLoader(helper, String className, loadedClass){
-//        this.helper = helper
-//        this.className = className
-//        this.loadedClass = loadedClass
-//    }
+    LibClassLoader(pruntime, String className){
+        this.pruntime = pruntime
+        this.className = className
+        this.loadedClass = null
+    }
+
+    LibClassLoader(pruntime, String className, loadedClass){
+        this.pruntime = pruntime
+        this.className = className
+        this.loadedClass = loadedClass
+    }
 
 
     Object getProperty(String property) {
@@ -33,17 +29,17 @@ trait LibClassLoader {
             return loadedClass.getProperties()[property]
         }
 
-//        if(!this.className) {
-//            return new LibClassLoader(this.helper, property)
-//        }
+        if(!this.className) {
+            return new LibClassLoader(this.pruntime, property)
+        }
 
         if(property =~ /^[A-Z].*/) {
 
             def gcl = getLibLoader().getGroovyClassLoader()
             loadedClass = gcl.loadClass( (String) "${this.className}.${property}")
-//            return new LibClassLoader(this.helper, "${this.className}.${property}", loadedClass)
+            return new LibClassLoader(this.pruntime, "${this.className}.${property}", loadedClass)
         } else {
-//            return new LibClassLoader(this.helper, "${this.className}.${property}")
+            return new LibClassLoader(this.pruntime, "${this.className}.${property}")
         }
     }
 
@@ -60,5 +56,4 @@ trait LibClassLoader {
 
     }
 
-   abstract LibraryLoader getLibLoader()
 }

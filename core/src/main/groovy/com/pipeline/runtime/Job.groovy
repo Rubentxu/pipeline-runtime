@@ -19,11 +19,12 @@ class Job {
     }
 
     static private void initializeJob() {
-        steps = new StepsExecutor()
+        steps = StepsExecutor.getInstance()
         steps.env.putAll(Job.script.getBinding().getVariables()?.environment)
         steps.credentials.addAll(Job.script.getBinding().getVariables()?.credentials)
         steps.configureScm(Job.script.getBinding().getVariables()?.scmConfig)
         steps.initializeWorkspace()
+        steps.setBinding(script.getBinding())
     }
 
     static void node(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {

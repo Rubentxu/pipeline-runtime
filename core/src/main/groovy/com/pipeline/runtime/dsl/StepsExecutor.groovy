@@ -1,25 +1,20 @@
 package com.pipeline.runtime.dsl
 
-import com.pipeline.runtime.extensions.StepsExtensions
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-class StepsExecutor  extends StepsExtensions {
-    private ConcurrentMap<String, Object> dynamicProps
+@Singleton
+class StepsExecutor extends Script {
+    private ConcurrentMap<String, Object> dynamicProps = [
+            configFileProvider: this.&defaultMethodClosure,
+            ansiColor         : this.&defaultMethodClosure,
+            container         : this.&defaultMethodClosure,
+            node              : this.&defaultMethodClosure,
+            dir               : this.&defaultMethodClosure,
+            withCredentials   : this.&defaultMethodClosure,
+    ] as ConcurrentHashMap
 
-
-    StepsExecutor() {
-        dynamicProps = [
-                configFileProvider: this.&defaultMethodClosure,
-                ansiColor: this.&defaultMethodClosure,
-                container: this.&defaultMethodClosure,
-                node: this.&defaultMethodClosure,
-                dir: this.&defaultMethodClosure,
-                withCredentials: this.&defaultMethodClosure,
-        ] as ConcurrentHashMap
-
-    }
 
     def defaultMethodClosure(_, closure) {
         closure.delegate = this
@@ -41,6 +36,7 @@ class StepsExecutor  extends StepsExtensions {
 
     @Override
     Object run() {
+        println "Run StepEXECUTOR"
         return null
     }
 

@@ -9,7 +9,6 @@ println "Groovy versión :: ${GroovySystem.getVersion()}"
 println new Greeter().sayHello()
 hello()
 
-//println new Greeter().sayHello()
 
 
 //node {
@@ -44,20 +43,20 @@ pipeline {
                 echo "env.SOME_STRING=${env.SOME_STRING}"
                 echo "SOME_STRING=${SOME_STRING}"
                 echo "Mensaje ${MENSAJE}"
-
+                hello()
                 sh 'echo $PATH'
                 sh '''echo "Who I'm $SHELL"'''
                 checkout scm
                 sh "ls -la"
                 sh 'pwd'
-                hello()
+
             }
         }
         stage("Test") {
             steps {
                 sh "gradle assemble  --stacktrace"
-                sh "java -version"
                 sh "mvn -version"
+                sh "java -version"
                 withCredentials([ string(credentialsId: 'gitlab_token', variable: 'TOKEN')
                         ]) {
                     echo "Pintamos el token: <${env.TOKEN}>"
