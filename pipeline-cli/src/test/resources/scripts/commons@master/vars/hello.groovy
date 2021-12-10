@@ -1,5 +1,5 @@
 
 def call() {
 
-    println 'Hola mundo'
+    println 'Hola mundo desde script'
 }

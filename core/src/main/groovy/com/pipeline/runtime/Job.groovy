@@ -4,9 +4,6 @@ import com.pipeline.runtime.dsl.PipelineDsl
 import com.pipeline.runtime.dsl.StepsExecutor
 
 import static groovy.lang.Closure.DELEGATE_ONLY
-import static groovy.lang.Closure.DELEGATE_ONLY
-import static groovy.lang.Closure.DELEGATE_ONLY
-import static groovy.lang.Closure.DELEGATE_ONLY
 
 class Job {
     public static Script script

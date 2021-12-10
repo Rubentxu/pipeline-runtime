@@ -1,6 +1,7 @@
 package com.pipeline.runtime.extensions
 
 import com.pipeline.runtime.dsl.StepsExecutor
+import org.apache.commons.io.FileUtils
 
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -16,9 +17,10 @@ class Workspace {
 
     static void initializeWorkspace(StepsExecutor self) {
         def workingDirPath = toFullPath(self,"${workingDir}/${self.env.JOB_NAME}")
-        if (!workingDirPath.toFile().exists()){
-            Files.createDirectories(workingDirPath)
+        if (workingDirPath.toFile().exists()){
+            FileUtils.cleanDirectory(workingDirPath.toFile());
         }
+        Files.createDirectories(workingDirPath)
         workingDir = workingDirPath.toString()
     }
 

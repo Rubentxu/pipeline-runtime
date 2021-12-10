@@ -38,7 +38,7 @@ class PipelineRuntime implements Runnable {
     String baseScriptRoot = "."
     Binding binding
     ClassLoader baseClassloader = this.class.classLoader
-    Class scriptBaseClass = StepsExecutor.class
+//    Class scriptBaseClass = StepsExecutor.class
 
     PipelineRuntime(String jenkinsFile, String configFile, String libraryPath = '.') {
         this.jenkinsFile = jenkinsFile
@@ -155,7 +155,7 @@ class PipelineRuntime implements Runnable {
         configuration.addCompilationCustomizers(importCustomizer)
 
         configuration.setDefaultScriptExtension(scriptExtension)
-        configuration.setScriptBaseClass(scriptBaseClass.getName())
+//        configuration.setScriptBaseClass(scriptBaseClass.getName())
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(configuration)
         getLibLoader().loadLibrary("commons")

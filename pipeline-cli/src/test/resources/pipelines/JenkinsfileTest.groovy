@@ -50,6 +50,7 @@ pipeline {
                 checkout scm
                 sh "ls -la"
                 sh 'pwd'
+                hello()
             }
         }
         stage("Test") {
