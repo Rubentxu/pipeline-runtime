@@ -31,6 +31,13 @@ class GitSCMSteps {
             FileUtils.cleanDirectory(targetPath.toFile())
         }
 
+        if(scm.userRemoteConfigs[0].credentialsId) {
+            self.withCredentials([ self.usernamePassword(credentialsId: 'gitlab', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                println "Cogemos el USER: <${self.env.USER}>"
+                println "Cogemos el PASS: <${self.env.PASS}>"
+            }
+        }
+
         Git.cloneRepository()
                 .setURI(scm.userRemoteConfigs[0].url)
                 .setDirectory(targetPath.toFile())

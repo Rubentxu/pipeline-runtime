@@ -13,7 +13,7 @@ class PipelineRuntimeSpec {
         def filePath = getClass().getClassLoader().getResource('pipelines/JenkinsfileTest.groovy').getPath()
         def configPath = getClass().getClassLoader().getResource('pipelines/config.yaml').getPath()
 
-        new CommandLine(new PipelineCLI()).execute("--jenkinsfile=$filePath", "-c=$configPath");
+        new CommandLine(new PipelineCLI()).execute("-p=$filePath", "-c=$configPath");
         String expected = String.format("--jenkinsfile='value'%n" +
                 "position[0]='arg0'%n" +
                 "position[1]='arg1'%n");

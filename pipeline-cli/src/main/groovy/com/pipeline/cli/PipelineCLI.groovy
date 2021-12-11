@@ -8,10 +8,10 @@ import picocli.CommandLine.Option
 @CompileStatic
 class PipelineCLI implements Runnable {
 
-    @Option(names = ["-j", "--jenkinsfile"], description = "Jenkinsfile")
+    @Option(names = ["-p", "--pipelinefile"], description = "Pipeline file definition")
     String jenkinsFile
 
-    @Option(names = ["-c", "--config"], description = "Jenkins config file")
+    @Option(names = ["-c", "--config"], description = "Pipeline config file")
     String configFile
 
     void run() throws IllegalAccessException, InstantiationException, IOException {

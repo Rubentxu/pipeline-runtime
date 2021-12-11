@@ -14,7 +14,7 @@ scmConfig:
     - name: gradle-simple
       url: https://github.com/jitpack/gradle-simple
       refspec: ''
-      credentialsId: ''
+      credentialsId: 'gitlab'
   branches:
     - name: master
   extensions:

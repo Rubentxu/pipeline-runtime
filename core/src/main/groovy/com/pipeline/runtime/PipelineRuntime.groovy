@@ -19,8 +19,6 @@ class PipelineRuntime implements Runnable {
     private static Method SCRIPT_SET_BINDING = Script.getMethod('setBinding', Binding.class)
     private GroovyClassLoader loader
     private String jenkinsFile
-    private Script script
-    private StepsExecutor steps
     private Map<String, LibraryConfiguration> libraries = [:]
     private GroovyScriptEngine gse
     private LibraryLoader libLoader
@@ -160,16 +158,16 @@ class PipelineRuntime implements Runnable {
 
     static LibClassLoader library(Map args) {
         assert args.identifier
-//        steps.getLibLoader().loadImplicitLibraries()
-//        steps.getLibLoader().loadLibrary(args.identifier)
-//        steps.setGlobalVars(script.getBinding())
+//        libLoader.loadImplicitLibraries()
+//        libLoader.loadLibrary(args.identifier)
+//        setGlobalVars(script.getBinding())
         return new LibClassLoader(StepsExecutor.getInstance(), null)
     }
 
     static LibClassLoader library(String expression) {
-//        steps.getLibLoader().loadImplicitLibraries()
-//        steps.getLibLoader().loadLibrary(expression)
-//        steps.setGlobalVars(script.getBinding())
+//        libLoader.loadImplicitLibraries()
+//        libLoader.loadLibrary(expression)
+//        setGlobalVars(script.getBinding())
         return new LibClassLoader(StepsExecutor.getInstance(), null)
     }
 
