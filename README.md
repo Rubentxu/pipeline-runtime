@@ -3,13 +3,9 @@
 $ gradle examples:runScript
 $ gradle clean pipeline-cli:nativeCompile
 $ pipeline-cli/build/native/nativeCompile/pipeline-cli -j=pipeline-cli/src/test/resources/pipelines/JenkinsfileTest.groovy \
- -c=pipeline-cli/src/test/resources/pipelines/config.yaml \
- -l=pipeline-cli/src/test/resources/scripts
+ -c=pipeline-cli/src/test/resources/pipelines/config.yaml 
  
-$ pipeline-runtime/pipeline-cli/build/native/nativeCompile/pipeline-cli  \
--j=pipeline-runtime/pipeline-cli/src/test/resources/pipelines/JenkinsfileTest.groovy \
--c=pipeline-runtime/pipeline-cli/src/test/resources/pipelines/config.yaml  \
- -l=pipeline-runtime/pipeline-cli/src/test/resources/scripts
+$  pipeline-runtime/pipeline-cli/build/native/nativeCompile/pipeline-cli  -j=JenkinsfileTest.groovy -c=config.yaml   
 ```
 
 

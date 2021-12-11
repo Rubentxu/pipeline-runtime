@@ -23,6 +23,12 @@ scmConfig:
     relativeTargetDirectory: ''
     cleanCheckout: true
 
+sharedLibrary:
+  name: commons
+  version: master
+  source:
+    local: src/test/resources/scripts
+
 
 environment:
   JOB_NAME: Ejemplo-pipeline

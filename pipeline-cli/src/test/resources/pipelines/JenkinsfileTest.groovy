@@ -44,6 +44,7 @@ pipeline {
                 echo "SOME_STRING=${SOME_STRING}"
                 echo "Mensaje ${MENSAJE}"
                 hello()
+                echo message.otherMessage()
                 sh 'echo $PATH'
                 sh '''echo "Who I'm $SHELL"'''
                 checkout scm

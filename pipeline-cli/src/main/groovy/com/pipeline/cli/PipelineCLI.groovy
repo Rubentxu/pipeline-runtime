@@ -14,11 +14,8 @@ class PipelineCLI implements Runnable {
     @Option(names = ["-c", "--config"], description = "Jenkins config file")
     String configFile
 
-    @Option(names = ["-l", "--library"], description = "Jenkins library path")
-    String library
-
     void run() throws IllegalAccessException, InstantiationException, IOException {
-        PipelineRuntime runtime = new PipelineRuntime(jenkinsFile, configFile, library)
+        PipelineRuntime runtime = new PipelineRuntime(jenkinsFile, configFile)
         runtime.init()
                 .run()
 

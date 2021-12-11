@@ -1,10 +1,8 @@
 package com.pipeline.runtime
 
-
-import com.pipeline.runtime.library.LibClassLoader
-import com.pipeline.runtime.library.LibraryAnnotationTransformer
-import com.pipeline.runtime.library.LibraryConfiguration
-import com.pipeline.runtime.library.LibraryLoader
+import com.pipeline.runtime.dsl.PipelineDsl
+import com.pipeline.runtime.dsl.StepsExecutor
+import com.pipeline.runtime.library.*
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -12,75 +10,85 @@ import org.yaml.snakeyaml.Yaml
 
 import java.lang.reflect.Method
 
-import static com.pipeline.runtime.library.LibraryConfiguration.library
 import static com.pipeline.runtime.library.LocalSource.localSource
+import static com.pipeline.runtime.library.GitSource.gitSource
+import static groovy.lang.Closure.DELEGATE_ONLY
 
 //@CompileStatic
 class PipelineRuntime implements Runnable {
-    protected static Method SCRIPT_SET_BINDING = Script.getMethod('setBinding', Binding.class)
+    private static Method SCRIPT_SET_BINDING = Script.getMethod('setBinding', Binding.class)
     private GroovyClassLoader loader
     private String jenkinsFile
-    private String configFile
-
-    Map<String, LibraryConfiguration> libraries = [:]
-    protected GroovyScriptEngine gse
-    LibraryLoader libLoader
-    List<String> scriptRoots = []
-    String scriptExtension = "jenkins"
-    Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
-    Map<String, String> staticImport = [
-            "pipeline"  : "com.pipeline.runtime.Job",
-            "initialize": "com.pipeline.runtime.Job",
-            "scm": "com.pipeline.runtime.extensions.GitSCMSteps"
+    private Script script
+    private StepsExecutor steps
+    private Map<String, LibraryConfiguration> libraries = [:]
+    private GroovyScriptEngine gse
+    private LibraryLoader libLoader
+    private List<String> scriptRoots = []
+    private String scriptExtension = "jenkins"
+    private ClassLoader baseClassloader = this.class.classLoader
+    private Map configuration
+//    Class scriptBaseClass = StepsExecutor.class
+    private Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
+    private Map<String, String> staticImport = [
+            "pipeline"  : "com.pipeline.runtime.PipelineRuntime",
+            "initialize": "com.pipeline.runtime.PipelineRuntime",
+            "library"   : "com.pipeline.runtime.PipelineRuntime",
+            "scm"       : "com.pipeline.runtime.extensions.GitSCMSteps"
     ]
 
-    String baseScriptRoot = "."
-    Binding binding
-    ClassLoader baseClassloader = this.class.classLoader
-//    Class scriptBaseClass = StepsExecutor.class
 
-    PipelineRuntime(String jenkinsFile, String configFile, String libraryPath = '.') {
-        this.jenkinsFile = jenkinsFile
-        this.configFile = configFile
-        scriptRoots.add(libraryPath)
+    PipelineRuntime(String jenkinsFile, String configFile) {
+        Objects.requireNonNull(jenkinsFile, "Pipelinefile cannot be null.")
+        Objects.requireNonNull(configFile, "Configuration file cannot be null.")
+        this.jenkinsFile = toFullPath(jenkinsFile)
 
-        def library = library().name('commons')
-                .defaultVersion("master")
-                .allowOverride(true)
-                .implicit(false)
-                .targetPath('<notNeeded>')
-                .retriever(localSource(libraryPath))
-                .build()
-        registerSharedLibrary(library)
+        scriptRoots.add(jenkinsFile)
+
+        Yaml parser = new Yaml()
+        configuration = parser.load((configFile as File).text)
+        registerSharedLibrary(configuration)
+
+        configuration.each { println it }
+        println "Configuration $configuration"
+
 
     }
 
-    void registerSharedLibrary(LibraryConfiguration libraryDescription) {
-        Objects.requireNonNull(libraryDescription)
-        Objects.requireNonNull(libraryDescription.name)
-        this.libraries.put(libraryDescription.name, libraryDescription)
+    void registerSharedLibrary(Map configuration) {
+        if (configuration.sharedLibrary) {
+            Objects.requireNonNull(configuration.sharedLibrary.name, "Property 'name' of the shared library must be defined")
+            Objects.requireNonNull(configuration.sharedLibrary.source, "Property 'source' of the shared library must be defined")
+            def name = configuration.sharedLibrary.name
+            def version = configuration.sharedLibrary?.version ?: 'master'
+            SourceRetriever retriever = null
+            if (configuration.sharedLibrary.source.local) {
+                retriever = localSource(toFullPath(configuration.sharedLibrary.source.local))
+            } else if (configuration.sharedLibrary.source.git) {
+                assert configuration.sharedLibrary.source.git.startsWith("https:"): "git source must point to a valid repository url"
+                retriever = gitSource(configuration.sharedLibrary.source.git)
+            } else {
+                throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined")
+            }
+
+            LibraryConfiguration library = LibraryConfiguration.library(name)
+                    .defaultVersion(version)
+                    .allowOverride(true)
+                    .implicit(false)
+                    .targetPath('<notNeeded>')
+                    .retriever(retriever)
+                    .build()
+            this.libraries.put(library.name, library)
+        }
+
     }
 
     void run() throws IllegalAccessException, InstantiationException, IOException {
+        def binding = new Binding()
 
-        if (configFile) {
-            Yaml parser = new Yaml()
-            Map example = parser.load((configFile as File).text)
-
-            example.each { println it }
-            binding = new Binding(example)
-            println "Binding $example"
-
-        }
-        binding.getVariables().put('library', { String expression ->
-            return new LibClassLoader(this, null)
-        })
-
-        def script = loadScript(toFullPath(jenkinsFile), binding)
-        Job.script = script
+        def script = loadScript(jenkinsFile, binding)
+        initializePipeline(binding)
         script.run()
-
-
     }
 
 
@@ -91,6 +99,15 @@ class PipelineRuntime implements Runnable {
         setGlobalVars(binding)
         Script script = InvokerHelper.createScript(scriptClass, binding)
         return script
+    }
+
+    private void initializePipeline(Binding binding) {
+        def steps = StepsExecutor.getInstance()
+        steps.env.putAll(configuration.environment)
+        steps.credentials.addAll(configuration.credentials)
+        steps.configureScm(configuration.scmConfig)
+        steps.initializeWorkspace()
+        steps.setBinding(binding)
     }
 
 
@@ -113,33 +130,65 @@ class PipelineRuntime implements Runnable {
 
 
     String toFullPath(String filePath) {
-        def url = new File(filePath).toURI().toURL()
-        println "to Url $url"
-        return url.getPath()
+        def file = new File(filePath)
+        def path = file.toURI().toURL().getPath()
+        assert file.exists() : "File ${path} not exist"
+        return path
     }
 
     PipelineRuntime init() {
-        CompilerConfiguration configuration = new CompilerConfiguration()
-        loader = new GroovyClassLoader(baseClassloader, configuration)
+        CompilerConfiguration compilerConfiguration = new CompilerConfiguration()
+        loader = new GroovyClassLoader(baseClassloader, compilerConfiguration)
 
         libLoader = new LibraryLoader(loader, libraries)
         LibraryAnnotationTransformer libraryTransformer = new LibraryAnnotationTransformer(libLoader)
-        configuration.addCompilationCustomizers(libraryTransformer)
+        compilerConfiguration.addCompilationCustomizers(libraryTransformer)
 
         ImportCustomizer importCustomizer = new ImportCustomizer()
         imports.each { k, v -> importCustomizer.addImport(k, v) }
         staticImport.each { k, v -> importCustomizer.addStaticImport(v, k) }
-        configuration.addCompilationCustomizers(importCustomizer)
+        compilerConfiguration.addCompilationCustomizers(importCustomizer)
 
-        configuration.setDefaultScriptExtension(scriptExtension)
+        compilerConfiguration.setDefaultScriptExtension(scriptExtension)
 //        configuration.setScriptBaseClass(scriptBaseClass.getName())
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
-        gse.setConfig(configuration)
-        getLibLoader().loadLibrary("commons")
-        println "commons libs loaders ${getLibLoader().libRecords}"
+        gse.setConfig(compilerConfiguration)
+        libLoader.loadLibrary(configuration.sharedLibrary.name)
+        println "shared libs loaders ${libLoader.libRecords}"
         return this
     }
 
+    static LibClassLoader library(Map args) {
+        assert args.identifier
+//        steps.getLibLoader().loadImplicitLibraries()
+//        steps.getLibLoader().loadLibrary(args.identifier)
+//        steps.setGlobalVars(script.getBinding())
+        return new LibClassLoader(StepsExecutor.getInstance(), null)
+    }
+
+    static LibClassLoader library(String expression) {
+//        steps.getLibLoader().loadImplicitLibraries()
+//        steps.getLibLoader().loadLibrary(expression)
+//        steps.setGlobalVars(script.getBinding())
+        return new LibClassLoader(StepsExecutor.getInstance(), null)
+    }
+
+    static void pipeline(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {
+        final PipelineDsl dsl = new PipelineDsl()
+
+        closure.delegate = dsl
+        closure.resolveStrategy = DELEGATE_ONLY
+        closure.call()
+    }
+
+
+    static void node(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {
+        final PipelineDsl dsl = new PipelineDsl()
+
+        closure.delegate = dsl
+        closure.resolveStrategy = DELEGATE_ONLY
+        closure.call()
+    }
 
 
 }
