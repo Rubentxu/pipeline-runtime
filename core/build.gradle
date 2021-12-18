@@ -26,14 +26,22 @@ dependencies {
     implementation('commons-io:commons-io:2.11.0')
     implementation 'org.yaml:snakeyaml:1.29'
 
-    testImplementation 'org.spockframework:spock-core:1.1-groovy-2.4'
-    testImplementation 'junit:junit:4.13.1'
-    testImplementation 'org.mockito:mockito-core:2.+'
-    testImplementation 'com.squareup.okhttp3:okhttp:4.9.0'
-    testImplementation 'com.squareup.okhttp3:mockwebserver:4.9.0'
-//    testImplementation 'org.jenkins-ci.main:jenkins-test-harness:2.71'
-//    testImplementation 'com.lesfurets:jenkins-pipeline-unit:1.9'
+    testImplementation platform("org.spockframework:spock-bom:2.0-groovy-3.0")
+    testImplementation "org.spockframework:spock-core"
+    testImplementation "org.spockframework:spock-junit4"  // you can remove this if your code does not rely on old JUnit 4 rules
 
+    // optional dependencies for using Spock
+    testImplementation "org.hamcrest:hamcrest-core:2.2"   // only necessary if Hamcrest matchers are used
+    testRuntimeOnly "net.bytebuddy:byte-buddy:1.11.0" // allows mocking of classes (in addition to interfaces)
+    testRuntimeOnly "org.objenesis:objenesis:3.2"      // allows mockin
+
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }
 
 

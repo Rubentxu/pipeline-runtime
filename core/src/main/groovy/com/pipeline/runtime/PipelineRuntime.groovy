@@ -1,6 +1,7 @@
 package com.pipeline.runtime
 
 import com.pipeline.runtime.dsl.PipelineDsl
+import com.pipeline.runtime.dsl.Steps
 import com.pipeline.runtime.dsl.StepsExecutor
 import com.pipeline.runtime.library.*
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -32,7 +33,7 @@ class PipelineRuntime implements Runnable {
             "pipeline"  : "com.pipeline.runtime.PipelineRuntime",
             "initialize": "com.pipeline.runtime.PipelineRuntime",
             "library"   : "com.pipeline.runtime.PipelineRuntime",
-            "scm"       : "com.pipeline.runtime.extensions.GitSCMSteps"
+            "scm"       : "com.pipeline.runtime.extensions.GitSCM"
     ]
 
 
@@ -49,6 +50,8 @@ class PipelineRuntime implements Runnable {
 
         configuration.each { println it }
         println "Configuration $configuration"
+
+        ServiceLocator.instance.loadService(Steps.class, new StepsExecutor())
 
 
     }
@@ -100,7 +103,7 @@ class PipelineRuntime implements Runnable {
     }
 
     private void initializePipeline(Binding binding) {
-        def steps = StepsExecutor.getInstance()
+        def steps = ServiceLocator.instance.getService(Steps.class)
         steps.env.putAll(configuration.environment)
         steps.credentials.addAll(configuration.credentials)
         steps.configureScm(configuration.scmConfig)
@@ -161,14 +164,14 @@ class PipelineRuntime implements Runnable {
 //        libLoader.loadImplicitLibraries()
 //        libLoader.loadLibrary(args.identifier)
 //        setGlobalVars(script.getBinding())
-        return new LibClassLoader(StepsExecutor.getInstance(), null)
+        return new LibClassLoader(ServiceLocator.instance.getService(Steps.class), null)
     }
 
     static LibClassLoader library(String expression) {
 //        libLoader.loadImplicitLibraries()
 //        libLoader.loadLibrary(expression)
 //        setGlobalVars(script.getBinding())
-        return new LibClassLoader(StepsExecutor.getInstance(), null)
+        return new LibClassLoader(ServiceLocator.instance.getService(Steps.class), null)
     }
 
     static void pipeline(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {

@@ -1,6 +1,6 @@
 package com.pipeline.runtime.dsl
 
-
+import com.pipeline.runtime.ServiceLocator
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -42,7 +42,7 @@ class PipelineDsl {
     }
 
     void environment(@DelegatesTo(value = Map, strategy = DELEGATE_FIRST) final Closure closure) {
-        StepsExecutor.getInstance().env.with(closure)
+        ServiceLocator.instance.getService(Steps.class).env.with(closure)
     }
 
     void stages(@DelegatesTo(value = StagesDsl, strategy = DELEGATE_ONLY) final Closure closure) {
@@ -95,7 +95,7 @@ class StageDsl {
             @DelegatesTo(value = StepsExecutor, strategy = DELEGATE_ONLY)
             @ClosureParams(value = SimpleType, options = ["java.util.Map"]) final Closure closure) {
 
-        closure.delegate = StepsExecutor.getInstance()
+        closure.delegate = ServiceLocator.instance.getService(Steps.class)
         closure.resolveStrategy = DELEGATE_ONLY
         closure.call()
     }

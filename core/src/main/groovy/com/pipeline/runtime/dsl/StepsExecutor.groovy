@@ -4,8 +4,8 @@ package com.pipeline.runtime.dsl
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-@Singleton
-class StepsExecutor extends Script {
+
+class StepsExecutor extends Script implements Steps {
     private ConcurrentMap<String, Object> dynamicProps = [
             configFileProvider: this.&defaultMethodClosure,
             ansiColor         : this.&defaultMethodClosure,
@@ -22,7 +22,6 @@ class StepsExecutor extends Script {
     }
 
     def getSteps() {
-        println "getSteps"
         return this
     }
 

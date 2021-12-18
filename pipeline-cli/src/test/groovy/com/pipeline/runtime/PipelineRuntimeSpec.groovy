@@ -1,4 +1,4 @@
-package com.pipeline.cli
+package com.pipeline.runtime
 
 import groovy.transform.CompileStatic
 import org.junit.Test

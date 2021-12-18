@@ -12,7 +12,7 @@ class Credentials {
             @NamedParam(value = 'usernameVariable', type = String.class),
             @NamedParam(value = 'passwordVariable', type = String.class)
     ]) Map<String, String> params) {
-        def secret = credentials.find { it.id == params.credentialsId  }
+        def secret = findCredentials(self, params.credentialsId)
         self.env[params.usernameVariable] = secret.user
         self.env[params.passwordVariable] = secret.pass
     }
@@ -28,6 +28,14 @@ class Credentials {
     static def getCredentials(StepsExecutor self) {
         println "Store Credentials $credentials"
         return credentials
+    }
+
+    static def findCredentials(StepsExecutor self, String credentialsId) {
+        return credentials.find { it.id == credentialsId  }
+    }
+
+    static def getTypeCredentials(StepsExecutor self, String credentialsId) {
+        return credentials.find { it.id == credentialsId  }.type
     }
 
 }
