@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+
 usage() {
     echo "Usage: $(basename "$0") [-h] [-g] [-l] <DIR>" 1>&2
     exit 1
@@ -15,11 +16,11 @@ add_plugins() {
     if test -e "$file"; then
         echo "Setting up asdf plugins at $file"
         while IFS= read -r line; do
-            echo "read"
+            [ -z "$line"  ] && continue
             name=$(echo "$line" | awk '{print $1}')
             git_url=$(echo "$line" | awk '{print $2}')
             echo "Adding plugin '$name' ${git_url:+from url $git_url}"
-            asdf plugin add "$name" "$git_url"
+            asdf plugin add "$name" "$git_url" ||  echo "plugin $name is already installed"
         done < <(cat "$file")
     else
         echo "No $file file found"
@@ -32,9 +33,7 @@ install_versions() {
 
     if test -e "$file"; then
         echo "Installing asdf tool versions at $file"
-        cp $file ./.tool-versions
         asdf install
-        asdf current
     else
         echo "No $file file found"
     fi
@@ -84,6 +83,7 @@ fi
 ADFS_TOOL_PLUGINS_FILE="$WDIR/.tool-plugins"
 ADFS_TOOL_VERSIONS_FILE="$WDIR/.tool-versions"
 
+#. /home/podman/.asdf/asdf.sh
 # Install plugins and tool versions
 add_plugins "$ADFS_TOOL_PLUGINS_FILE"
 install_versions "$ADFS_TOOL_VERSIONS_FILE"

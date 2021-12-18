@@ -2,3 +2,6 @@ kubectl https://github.com/Banno/asdf-kubectl
 nodejs https://github.com/asdf-vm/asdf-nodejs
 helm https://github.com/Antiarchitect/asdf-helm
 stern https://github.com/looztra/asdf-stern
+java https://github.com/halcyon/asdf-java
+gradle https://github.com/rfrancis/asdf-gradle
+maven https://github.com/halcyon/asdf-maven

@@ -2,3 +2,9 @@ kubectl 1.21.2
 nodejs 12.16.3
 helm 2.16.9
 stern 1.19.0
+java adoptopenjdk-8.0.312+7
+java adoptopenjdk-11.0.13+8
+maven 3.6.3
+gradle 5.6.4
+gradle 6.9.1
+helm 2.16.9

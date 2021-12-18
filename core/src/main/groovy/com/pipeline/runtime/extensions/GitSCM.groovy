@@ -3,6 +3,8 @@ package com.pipeline.runtime.extensions
 import com.pipeline.runtime.dsl.StepsExecutor
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
+
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -31,19 +33,25 @@ class GitSCMSteps {
             FileUtils.cleanDirectory(targetPath.toFile())
         }
 
-        if(scm.userRemoteConfigs[0].credentialsId) {
-            self.withCredentials([ self.usernamePassword(credentialsId: 'gitlab', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                println "Cogemos el USER: <${self.env.USER}>"
-                println "Cogemos el PASS: <${self.env.PASS}>"
-            }
-        }
-
-        Git.cloneRepository()
+        def gitBuilder = Git.cloneRepository()
                 .setURI(scm.userRemoteConfigs[0].url)
                 .setDirectory(targetPath.toFile())
                 .setBranchesToClone(scm.branches.collect {"refs/heads/${it.name}".toString() })
                 .setBranch("refs/heads/${scm.branches[0].name}".toString())
-                .call()
+
+        def credentialsId = scm.userRemoteConfigs[0]?.credentialsId
+        if(credentialsId) {
+            if(self.getTypeCredentials(credentialsId) == 'username_password') {
+                self.withCredentials([ self.usernamePassword(credentialsId: scm.userRemoteConfigs[0].credentialsId,
+                        usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    gitBuilder.setCredentialsProvider(new UsernamePasswordCredentialsProvider( self.env.USER, self.env.PASS ))
+                }
+            }
+
+        }
+        gitBuilder.call()
+
+
     }
 }
 
