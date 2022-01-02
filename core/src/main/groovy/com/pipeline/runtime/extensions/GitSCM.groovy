@@ -27,7 +27,7 @@ class GitSCM {
         Files.delete(localPath.toPath())
 
         def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
-        Path targetPath = Paths.get("${self.workingDir}/${targetDirectory?:''}")
+        Path targetPath = Paths.get("${localPath.absolutePath}/${targetDirectory?:''}")
 
         if(Files.exists(targetPath)) {
             FileUtils.cleanDirectory(targetPath.toFile())
@@ -71,6 +71,11 @@ class Scm  {
             )
         }
         this.branches = config.branches as List<Branch>
+    }
+
+    Scm(userRemoteConfigs, branches) {
+        this.userRemoteConfigs = userRemoteConfigs
+        this.branches = branches
     }
 }
 

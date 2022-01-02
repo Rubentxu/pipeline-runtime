@@ -4,16 +4,17 @@ import com.pipeline.runtime.dsl.StepsExecutor
 
 import java.util.concurrent.ConcurrentHashMap
 
-class StepExecutorMock extends ConcurrentHashMap{
+class StepsExecutorMock extends ConcurrentHashMap {
     static private dynamicProps = [
-            env: [WORKSPACE : "./"],
-            params: [:],
-            out: {},
+            env               : [WORKSPACE: "./"],
+            params            : [:],
+            out               : {},
             configFileProvider: this.&defaultMethodClosure,
-            ansiColor: this.&defaultMethodClosure,
-            container: this.&defaultMethodClosure,
-            node: this.&defaultMethodClosure,
-            dir: this.&defaultMethodClosure,
+            ansiColor         : this.&defaultMethodClosure,
+            container         : this.&defaultMethodClosure,
+            node              : this.&defaultMethodClosure,
+            dir               : this.&defaultMethodClosure,
+            withCredentials   : this.&defaultMethodClosure,
 
     ]
     static private Map callTraces = [:]
@@ -23,11 +24,11 @@ class StepExecutorMock extends ConcurrentHashMap{
         return closure()
     }
 
-    static void echo(StepsExecutor self,String message) {
+    static void echo(StepsExecutor self, String message) {
         println message
     }
 
-    static void error(StepsExecutor self,String message) {
+    static void error(StepsExecutor self, String message) {
         throw new Exception(message)
     }
 
@@ -40,17 +41,11 @@ class StepExecutorMock extends ConcurrentHashMap{
         dynamicProps[propName] = val
     }
 
-    static def getProperty(StepsExecutor self, String propName) {
-        switch (propName) {
-            case "steps":
-                return this
-            default:
-                return dynamicProps[propName]
-        }
-
+    static def propertyMissing(StepsExecutor self,String prop) {
+        return dynamicProps[prop]
     }
 
-    static def methodMissing(StepsExecutor self,String methodName, args) {
+    static def methodMissing(StepsExecutor self, String methodName, args) {
         if (!callTraces.containsKey(methodName)) {
             callTraces[methodName] = []
         }
