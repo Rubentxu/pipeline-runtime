@@ -2,15 +2,64 @@ package com.pipeline.runtime.extensions
 
 import com.pipeline.runtime.dsl.StepsExecutor
 import groovy.transform.CompileStatic
-import org.eclipse.jgit.errors.UnsupportedCredentialItem
-import org.eclipse.jgit.transport.CredentialItem
-import org.eclipse.jgit.transport.CredentialsProvider
-import org.eclipse.jgit.transport.URIish
+import org.apache.commons.io.FileUtils
+import org.eclipse.jgit.api.CloneCommand
+import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.lib.Repository
+import org.eclipse.jgit.lib.RepositoryCache
+import org.eclipse.jgit.transport.RefSpec
+import org.eclipse.jgit.util.FS
+import spock.lang.Shared
 import spock.lang.Specification
+
+import static org.mockito.Mockito.when
+import static org.powermock.api.mockito.PowerMockito.mockStatic
 
 //@CompileStatic
 class GitSCMSpec extends Specification {
-    private static final String REMOTE_URL = "ssh://<user>:<pwd>@<host>:22/<path-to-remote-repo>/";
+    @Shared
+    Repository remoteRepo
+
+    def setupSpec() {
+        File remoteDir = File.createTempFile("remote", "")
+        remoteDir.delete()
+        remoteDir.mkdirs()
+
+        // Create a bare repository
+        RepositoryCache.FileKey fileKey = RepositoryCache.FileKey.exact(remoteDir, FS.DETECTED)
+        remoteRepo = fileKey.open(false)
+        remoteRepo.create(true)
+
+        // Clone the bare repository
+        File cloneDir = File.createTempFile("clone", "")
+        cloneDir.delete()
+        cloneDir.mkdirs()
+        Git git = Git.cloneRepository()
+                .setURI(remoteRepo.getDirectory().getAbsolutePath()).setDirectory(cloneDir)
+                .call()
+
+        // Let's to our first commit
+        // Create a new file
+        File newFile = new File(cloneDir, "myNewFile")
+        newFile.createNewFile();
+        FileUtils.writeStringToFile(newFile, "Test content file")
+        // Commit the new file
+        git.add()
+                .addFilepattern(newFile.getName())
+                .call()
+        git.commit()
+                .setMessage("First commit")
+                .setAuthor("Rubentxu", "rubentxudev@gmail.com")
+                .call()
+
+        // Push the commit on the bare repository
+        RefSpec refSpec = new RefSpec("master")
+        git.push()
+                .setRemote("origin")
+                .setRefSpecs(refSpec)
+                .call()
+    }
+
     def "Debe clonar un repositorio"() {
         given:
         StepsExecutor steps =  new StepsExecutor()
@@ -22,46 +71,11 @@ class GitSCMSpec extends Specification {
             steps.env[params.usernameVariable] = 'userGradle'
             steps.env[params.passwordVariable] = 'passwordGradle'
         }
-        // this is necessary when the remote host does not have a valid certificate, ideally we would install the certificate in the JVM
-        // instead of this unsecure workaround!
-//        CredentialsProvider allowHosts = new CredentialsProvider() {
-//
-//            @Override
-//            public boolean supports(CredentialItem... items) {
-//                for(CredentialItem item : items) {
-//                    if((item instanceof CredentialItem.YesNoType)) {
-//                        return true;
-//                    }
-//                }
-//                return false;
-//            }
-//
-//            @Override
-//            public boolean get(URIish uri, CredentialItem... items) throws UnsupportedCredentialItem {
-//                for(CredentialItem item : items) {
-//                    if(item instanceof CredentialItem.YesNoType) {
-//                        ((CredentialItem.YesNoType)item).setValue(true);
-//                        return true;
-//                    }
-//                }
-//                return false;
-//            }
-//
-//            @Override
-//            public boolean isInteractive() {
-//                return false;
-//            }
-//        }
-        File localPath = File.createTempFile("TestGitRepository", "");
-        if(!localPath.delete()) {
-            throw new IOException("Could not delete temporary file " + localPath);
-        }
 
-        println("Cloning from " + REMOTE_URL + " to " + localPath);
-        def remoteConfig = new UserRemoteConfigs(url: REMOTE_URL, name: 'test', credentialsId: 'gitlab' )
+        def remoteConfig = new UserRemoteConfigs(url: remoteRepo.getDirectory().getAbsolutePath(), name: 'test', credentialsId: 'gitlab' )
 
         def scm = new Scm( new ArrayList<UserRemoteConfigs>(){{ add(remoteConfig)}},
-                new ArrayList<Branch>(){{ add(new Branch(name:'main'))}})
+                new ArrayList<Branch>(){{ add(new Branch(name:'master'))}})
 
         when:
         GitSCM.checkout(steps, scm)

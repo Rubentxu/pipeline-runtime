@@ -22,12 +22,13 @@ class GitSCM {
 
     static def checkout(StepsExecutor self, final Scm scm) {
         println "+ checkout"
-        File localPath = File.createTempFile(self.getWorkingDir(), "");
+        File cloneDir = File.createTempFile(self.getWorkingDir(), "");
+        cloneDir.delete()
+        cloneDir.mkdirs()
 
-        Files.delete(localPath.toPath())
 
         def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
-        Path targetPath = Paths.get("${localPath.absolutePath}/${targetDirectory?:''}")
+        Path targetPath = Paths.get("${cloneDir.absolutePath}/${targetDirectory?:''}")
 
         if(Files.exists(targetPath)) {
             FileUtils.cleanDirectory(targetPath.toFile())
