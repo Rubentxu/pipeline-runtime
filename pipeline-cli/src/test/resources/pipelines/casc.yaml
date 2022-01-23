@@ -1,0 +1,24 @@
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - gitLabApiTokenImpl:
+              scope: SYSTEM
+              id: gitlab
+              apiToken: "${BIND_TOKEN}"
+              description: "Gitlab Token"
+
+unclassified:
+  gitscm:
+    globalConfigName: jenkins
+    globalConfigEmail: jenkins@domain.local
+    createAccountBasedOnEmail: true
+  gitlabconnectionconfig:
+    connections:
+      - apiTokenId: gitlab
+        clientBuilderId: "autodetect"
+        connectionTimeout: 20
+        ignoreCertificateErrors: true
+        name: "my_gitlab_server"
+        readTimeout: 10
+        url: "https://gitlab.com/"

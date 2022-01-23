@@ -1,0 +1,43 @@
+credentials:
+  - name: gitlab
+    id: gitlab
+    type: username_password
+    user: e_rcabre
+    pass: password.
+  - name: gitlab_token
+    id: gitlab_token
+    type: secret_text
+    secret: e_rcabre-token
+
+pipeline:
+  scm:
+    gitscm:
+      globalConfigName: jenkins
+      globalConfigEmail: jenkins@domain.local
+      userRemoteConfigs:
+        - name: gradle-simple
+          url: https://github.com/jitpack/gradle-simple
+          refspec: ''
+          credentialsId: 'gitlab'
+      branches:
+        - name: master
+      extensions:
+        sparseCheckoutPaths: [ ]
+        localBranch: ''
+        relativeTargetDirectory: ''
+        cleanCheckout: true
+  globalLibraries:
+    libraries:
+      - name: commons
+        retriever:
+          scm:
+            git:
+              remote: https://github.com/jenkins-infra/pipeline-library.git
+              credentialsId: "reimagined-parakeet-ssh"
+      - name: local-lib
+        retriever:
+          local:
+            path: src/test/resources/scripts
+  environmentVars:
+    JOB_NAME: Ejemplo-pipeline
+    MENSAJE: Hola Mundo

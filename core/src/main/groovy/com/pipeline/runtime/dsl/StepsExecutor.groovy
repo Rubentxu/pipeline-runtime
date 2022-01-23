@@ -1,5 +1,6 @@
 package com.pipeline.runtime.dsl
 
+import com.pipeline.runtime.interfaces.IConfiguration
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -14,7 +15,15 @@ class StepsExecutor extends Script implements Steps {
             dir               : this.&defaultMethodClosure,
             withCredentials   : this.&defaultMethodClosure,
     ] as ConcurrentHashMap
+    IConfiguration configuration
 
+    StepsExecutor(IConfiguration configuration) {
+        this.configuration = configuration
+    }
+
+    IConfiguration getConfiguration() {
+        return this.configuration
+    }
 
     def defaultMethodClosure(_, closure) {
         closure.delegate = this

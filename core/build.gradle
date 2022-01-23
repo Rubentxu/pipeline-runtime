@@ -20,24 +20,16 @@ java {
 }
 
 dependencies {
-    implementation 'org.codehaus.groovy:groovy-all:2.5.14'
+    implementation 'org.codehaus.groovy:groovy-all:3.0.9'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
     implementation('org.apache.commons:commons-lang3:3.12.0')
     implementation('commons-io:commons-io:2.11.0')
     implementation 'org.yaml:snakeyaml:1.29'
 
-    testImplementation platform("org.spockframework:spock-bom:2.0-groovy-3.0")
-    testImplementation "org.spockframework:spock-core"
-    testImplementation "org.spockframework:spock-junit4"  // you can remove this if your code does not rely on old JUnit 4 rules
-//    testImplementation 'org.mockito:mockito-core:4.2.0'
-    testImplementation 'org.powermock:powermock-module-junit4:1.6.4'
-    testImplementation 'org.powermock:powermock-api-mockito:1.6.4'
-
-
-    // optional dependencies for using Spock
-    testImplementation "org.hamcrest:hamcrest-core:2.2"   // only necessary if Hamcrest matchers are used
-    testRuntimeOnly "net.bytebuddy:byte-buddy:1.11.0" // allows mocking of classes (in addition to interfaces)
-    testRuntimeOnly "org.objenesis:objenesis:3.2"      // allows mockin
+    testImplementation 'org.spockframework:spock-core:2.1-M2-groovy-3.0'
+//    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
+//    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testImplementation 'org.mockito:mockito-core:2.+'
 
 }
 

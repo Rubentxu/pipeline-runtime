@@ -1,6 +1,7 @@
 package com.pipeline.runtime.extensions
 
 import com.pipeline.runtime.dsl.StepsExecutor
+import com.pipeline.runtime.interfaces.IConfiguration
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
@@ -16,8 +17,8 @@ class GitSCM {
         return scm
     }
 
-    static def configureScm(StepsExecutor self, Map map) {
-        scm = new Scm(map)
+    static def configureScm(StepsExecutor self) {
+        scm = new Scm(self.configuration)
     }
 
     static def checkout(StepsExecutor self, final Scm scm) {
@@ -47,6 +48,8 @@ class GitSCM {
                         usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     gitBuilder.setCredentialsProvider(new UsernamePasswordCredentialsProvider( self.env.USER, self.env.PASS ))
                 }
+            } else  if(self.getTypeCredentials(credentialsId) == 'username_password') {
+
             }
 
         }
@@ -63,15 +66,15 @@ class Scm  {
     List<Extension> extensions
     List<Branch> branches
 
-    Scm(config) {
-        this.userRemoteConfigs = config.userRemoteConfigs.collect{
+    Scm(IConfiguration config) {
+        this.userRemoteConfigs = config.getValue('pipeline.scm.gitscm.userRemoteConfigs').collect{
             new UserRemoteConfigs(url: it.url,
                     name: it.name,
                     refspec: it.refspec,
                     credentialsId: it.credentialsId
             )
         }
-        this.branches = config.branches as List<Branch>
+        this.branches = config.getValue('pipeline.scm.gitscm.branches') as List<Branch>
     }
 
     Scm(userRemoteConfigs, branches) {

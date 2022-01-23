@@ -13,7 +13,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 import static org.mockito.Mockito.when
-import static org.powermock.api.mockito.PowerMockito.mockStatic
+//import static org.powermock.api.mockito.PowerMockito.mockStatic
 
 //@CompileStatic
 class GitSCMSpec extends Specification {
