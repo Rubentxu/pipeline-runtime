@@ -52,8 +52,8 @@ class PipelineRuntime implements Runnable {
         scriptRoots.add(jenkinsFile)
 
         configuration.loadConfig(configFile as File)
-        if (configuration.containsKey('unclassified.globalLibraries.libraries')) {
-            for (def library : configuration.getValue('unclassified.globalLibraries.libraries') as List<Map>) {
+        if (configuration.containsKey('pipeline.globalLibraries.libraries')) {
+            for (def library : configuration.getValue('pipeline.globalLibraries.libraries') as List<Map>) {
                 registerSharedLibrary(library)
             }
         }
@@ -70,11 +70,11 @@ class PipelineRuntime implements Runnable {
         SourceRetriever retriever = null
         if (library.retriever?.local?.path) {
             retriever = localSource(toFullPath(library.retriever.local.path))
-        } else if (library.retriever?.modernSCM?.scm?.git) {
-            assert library.retriever?.modernSCM?.scm?.git?.remote.startsWith("https:"): "git source must point to a valid repository url"
-            retriever = gitSource(library.retriever?.modernSCM?.scm?.git?.remote)
+        } else if (library.retriever?.scm?.git) {
+            assert library.retriever?.scm?.git?.remote.startsWith("https:"): "git source must point to a valid repository url"
+            retriever = gitSource(library.retriever?.scm?.git?.remote)
         } else {
-            throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined")
+            throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $library")
         }
 
         LibraryConfiguration libraryConfig = LibraryConfiguration.library(name)
@@ -106,7 +106,7 @@ class PipelineRuntime implements Runnable {
 //        configuration.setScriptBaseClass(scriptBaseClass.getName())
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(compilerConfiguration)
-        for (def library : configuration.getValueOrDefault('unclassified.globalLibraries.libraries', []) as List<Map>) {
+        for (def library : configuration.getValueOrDefault('pipeline.globalLibraries.libraries', []) as List<Map>) {
             libLoader.loadLibrary(library.name)
         }
 
@@ -120,7 +120,7 @@ class PipelineRuntime implements Runnable {
 
         initializePipeline(binding)
         def script = loadScript(jenkinsFile, binding)
-//        script.run()
+        script.run()
     }
 
 

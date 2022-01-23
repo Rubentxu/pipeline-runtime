@@ -5,7 +5,7 @@ $ gradle clean pipeline-cli:nativeCompile
 $ pipeline-cli/build/native/nativeCompile/pipeline-cli -j=pipeline-cli/src/test/resources/pipelines/JenkinsfileTest.groovy \
  -c=pipeline-cli/src/test/resources/pipelines/config.yaml 
  
-$  pipeline-runtime/pipeline-cli/build/native/nativeCompile/pipeline-cli  -j=JenkinsfileTest.groovy -c=config.yaml   
+$  pipeline-runtime/pipeline-cli/build/native/nativeCompile/pipeline-cli  -p=JenkinsfileTest.groovy -c=config.yaml   
 ```
 
 
