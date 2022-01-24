@@ -25,7 +25,7 @@ class Shell {
         }
 
         new ProcessBuilder(['sh', '-c', command])
-                .directory(self.toFullPath(self.workingDir).toFile())
+                .directory(self.toFullPath("${self.getWorkingDir()}/${self.env.JOB_NAME}").toFile())
                 .environment(environment.collect { "${it.key}=${it.value}" } as String[])
                 .start()
 

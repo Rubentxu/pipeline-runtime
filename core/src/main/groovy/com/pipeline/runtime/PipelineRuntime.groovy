@@ -15,8 +15,6 @@ import static com.pipeline.runtime.library.LocalSource.localSource
 import static com.pipeline.runtime.library.GitSource.gitSource
 import static groovy.lang.Closure.DELEGATE_ONLY
 
-//import io.jenkins.plugins.casc
-
 //@CompileStatic
 class PipelineRuntime implements Runnable {
     private static Method SCRIPT_SET_BINDING = Script.getMethod('setBinding', Binding.class)
@@ -30,6 +28,7 @@ class PipelineRuntime implements Runnable {
     private ClassLoader baseClassloader = this.class.classLoader
     private IConfiguration configuration
     private ILoggerService logger
+    private Steps steps
 //    Class scriptBaseClass = StepsExecutor.class
     private Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
     private Map<String, String> staticImport = [
@@ -48,7 +47,7 @@ class PipelineRuntime implements Runnable {
 
         this.configuration = ServiceLocator.getService(IConfiguration.class)
         this.logger = ServiceLocator.getService(ILoggerService.class)
-
+        this.steps = ServiceLocator.instance.getService(Steps.class)
         scriptRoots.add(jenkinsFile)
 
         configuration.loadConfig(configFile as File)
@@ -77,19 +76,20 @@ class PipelineRuntime implements Runnable {
             throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $library")
         }
 
+
         LibraryConfiguration libraryConfig = LibraryConfiguration.library(name)
                 .defaultVersion(version)
                 .allowOverride(true)
                 .implicit(false)
-                .targetPath('src/test/resources/globalLib')
+                .targetPath(steps.workingDir)
                 .retriever(retriever)
                 .build()
         this.libraries.put(libraryConfig.name, libraryConfig)
 
-
     }
 
     PipelineRuntime init() {
+        steps.initializeWorkspace(configuration.getValueOrDefault('pipeline.environmentVars.JOB_NAME','job'))
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration()
         loader = new GroovyClassLoader(baseClassloader, compilerConfiguration)
 
@@ -134,11 +134,9 @@ class PipelineRuntime implements Runnable {
     }
 
     private void initializePipeline(Binding binding) {
-        def steps = ServiceLocator.instance.getService(Steps.class)
         steps.env.putAll(configuration.getValueOrDefault('pipeline.environmentVars',[:]))
         steps.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
         steps.configureScm()
-        steps.initializeWorkspace()
         steps.setBinding(binding)
     }
 

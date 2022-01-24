@@ -62,10 +62,10 @@ class LoggerService implements ILoggerService {
                     logPattern = "$GREEN [%s] %s $NORMAL"
                     break
                 case "DEBUG":
-                    logPattern = "$MAGENTA [%s] %s $ITALIC"
+                    logPattern = "$MAGENTA [%s] %s $NORMAL"
                     break
                 case"METRIC":
-                    logPattern = "$LIGHT_BLUE [%s] %s $ITALIC"
+                    logPattern = "$LIGHT_BLUE [%s] %s $NORMAL"
                     break
             }
             def msg = String.format(logPattern as String, level, message)

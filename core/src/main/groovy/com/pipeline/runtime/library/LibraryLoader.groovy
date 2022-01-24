@@ -1,5 +1,8 @@
 package com.pipeline.runtime.library
 
+import com.pipeline.runtime.ServiceLocator
+import com.pipeline.runtime.interfaces.ILoggerService
+
 import static groovy.io.FileType.FILES
 import groovy.lang.GroovyCodeSource
 import java.nio.file.Files
@@ -95,7 +98,8 @@ class LibraryLoader {
      * @throws Exception
      */
     private void doLoadLibrary(LibraryConfiguration library, String version = null) throws Exception {
-        println "Loading shared library ${library.name} with version ${version ?: library.defaultVersion}"
+        def logger = ServiceLocator.getService(ILoggerService.class)
+        logger.info "Loading shared library ${library.name} with version ${version ?: library.defaultVersion}"
         try {
             def urls = library.retriever.retrieve(library.name, version ?: library.defaultVersion, library.targetPath)
             def record = new LibraryRecord(library, version ?: library.defaultVersion, urls.path)
@@ -103,7 +107,7 @@ class LibraryLoader {
             def globalVars = [:]
             urls.forEach { URL url ->
                 def file = new File(url.toURI())
-
+                logger.info "Global library available in path ${file.toPath()}"
                 def srcPath = file.toPath().resolve('src')
                 def varsPath = file.toPath().resolve('vars')
                 def resourcesPath = file.toPath().resolve('resources')
@@ -126,6 +130,7 @@ class LibraryLoader {
                     // prevent fd leak on the DirectoryStream from Files.list()
                     ds.close()
                 }
+
                 // pre-load library classes using JPU groovy class loader
                 if (preloadLibraryClasses && srcPath.toFile().exists()) {
                     srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->

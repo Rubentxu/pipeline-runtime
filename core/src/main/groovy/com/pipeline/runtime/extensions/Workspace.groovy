@@ -6,22 +6,23 @@ import org.apache.commons.io.FileUtils
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
 class Workspace {
-    static String workingDir = "build/workspace"
 
     static final ConcurrentMap<String, Object> params = [:] as ConcurrentHashMap
 
-    static void initializeWorkspace(StepsExecutor self) {
-        def workingDirPath = toFullPath(self,"${workingDir}/${self.env.JOB_NAME}")
+    static void initializeWorkspace(StepsExecutor self, String jobName) {
+
+        def workingDirPath = toFullPath(self,"${self.getWorkingDir()}")
+        def workingDirJobPath = toFullPath(self,"${self.getWorkingDir()}/${jobName}")
         if (workingDirPath.toFile().exists()){
             FileUtils.cleanDirectory(workingDirPath.toFile());
         }
         Files.createDirectories(workingDirPath)
-        workingDir = workingDirPath.toString()
+        Files.createDirectories(workingDirJobPath)
+
     }
 
     static Path toFullPath(StepsExecutor self, String filePath) {
@@ -34,7 +35,7 @@ class Workspace {
     }
 
     static String getWorkingDir(StepsExecutor self) {
-        return workingDir
+        return self.configuration.getValueOrDefault('pipeline.workingDir','build/workspace')
     }
 
     static ConcurrentMap<String, Object> getParams(StepsExecutor self) {

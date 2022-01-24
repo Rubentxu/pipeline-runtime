@@ -26,8 +26,9 @@ class ServiceLocator {
 
     public static initialize() {
         IConfiguration configuration = new Configuration()
+        ILoggerService loggerService = new LoggerService(configuration)
         loadService(IConfiguration.class, configuration)
-        loadService(ILoggerService.class, new LoggerService(configuration))
-        loadService(Steps.class, new StepsExecutor(configuration))
+        loadService(ILoggerService.class, loggerService)
+        loadService(Steps.class, new StepsExecutor(configuration, loggerService))
     }
 }

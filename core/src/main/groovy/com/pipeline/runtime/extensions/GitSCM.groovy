@@ -1,7 +1,10 @@
 package com.pipeline.runtime.extensions
 
+import com.pipeline.runtime.ServiceLocator
 import com.pipeline.runtime.dsl.StepsExecutor
 import com.pipeline.runtime.interfaces.IConfiguration
+import com.pipeline.runtime.interfaces.ILoggerService
+import groovy.transform.ToString
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
@@ -22,11 +25,10 @@ class GitSCM {
     }
 
     static def checkout(StepsExecutor self, final Scm scm) {
-        println "+ checkout"
-        File cloneDir = File.createTempFile(self.getWorkingDir(), "");
-        cloneDir.delete()
+        self.logger.info "+ checkout"
+        File cloneDir = new File("${self.getWorkingDir()}/${self.env.JOB_NAME}");
+//        cloneDir.delete()
         cloneDir.mkdirs()
-
 
         def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
         Path targetPath = Paths.get("${cloneDir.absolutePath}/${targetDirectory?:''}")
@@ -34,7 +36,7 @@ class GitSCM {
         if(Files.exists(targetPath)) {
             FileUtils.cleanDirectory(targetPath.toFile())
         }
-
+        self.logger.info "+ checkout in Path ${targetPath.toString()}"
         def gitBuilder = Git.cloneRepository()
                 .setURI(scm.userRemoteConfigs[0].url)
                 .setDirectory(targetPath.toFile())
@@ -43,23 +45,27 @@ class GitSCM {
 
         def credentialsId = scm.userRemoteConfigs[0]?.credentialsId
         if(credentialsId) {
-            if(self.getTypeCredentials(credentialsId) == 'username_password') {
-                self.withCredentials([ self.usernamePassword(credentialsId: scm.userRemoteConfigs[0].credentialsId,
+            def typeCredential = self.getTypeCredentials(credentialsId)
+            self.logger.debug "CredentialId with name $credentialsId and type $typeCredential defined"
+            if(typeCredential == 'username_password') {
+                self.withCredentials([ self.usernamePassword(credentialsId: credentialsId,
                         usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     gitBuilder.setCredentialsProvider(new UsernamePasswordCredentialsProvider( self.env.USER, self.env.PASS ))
                 }
-            } else  if(self.getTypeCredentials(credentialsId) == 'username_password') {
-
+            } else  if(typeCredential == 'secret_text') {
+                self.withCredentials([ self.string(credentialsId: credentialsId,
+                        variable: 'TOKEN')]) {
+                    gitBuilder.setCredentialsProvider(new UsernamePasswordCredentialsProvider( self.env.TOKEN, '' ))
+                }
             }
-
         }
         gitBuilder.call()
-
+        self.logger.debug "Call repository"
 
     }
 }
 
-
+@ToString
 class Scm  {
     String $class = 'GitSCM'
     List<UserRemoteConfigs> userRemoteConfigs
@@ -75,6 +81,7 @@ class Scm  {
             )
         }
         this.branches = config.getValue('pipeline.scm.gitscm.branches') as List<Branch>
+        ServiceLocator.getService(ILoggerService).debug this.toString()
     }
 
     Scm(userRemoteConfigs, branches) {
@@ -83,10 +90,12 @@ class Scm  {
     }
 }
 
+@ToString
 class Branch {
     String name
 }
 
+@ToString
 class UserRemoteConfigs {
     String url
     String name
@@ -108,6 +117,7 @@ class LocalBranch implements Extension {
     String localBranch
 }
 
+@ToString
 class SparseCheckoutPaths implements Extension {
     List<Path> sparseCheckoutPaths
     class Path {

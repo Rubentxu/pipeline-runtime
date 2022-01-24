@@ -22,7 +22,7 @@ class Credentials {
             @NamedParam(value = 'variable', type = String.class)
     ]) Map<String, String> params) {
         def secret = credentials.find { it.id == params.credentialsId }
-        self.env[params.variable] = secret.text
+        self.env[params.variable] = secret.secret
     }
 
     static def getCredentials(StepsExecutor self) {
@@ -35,7 +35,7 @@ class Credentials {
     }
 
     static def getTypeCredentials(StepsExecutor self, String credentialsId) {
-        return credentials.find { it.id == credentialsId  }.type
+        return credentials.find { it.id == credentialsId  }?.type
     }
 
 }
