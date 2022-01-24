@@ -35,7 +35,7 @@ class Credentials {
     }
 
     static def getTypeCredentials(StepsExecutor self, String credentialsId) {
-        return credentials.find { it.id == credentialsId  }?.type
+        return findCredentials(self,credentialsId)?.type
     }
 
 }

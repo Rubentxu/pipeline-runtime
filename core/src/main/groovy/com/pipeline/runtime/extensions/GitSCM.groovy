@@ -26,7 +26,7 @@ class GitSCM {
 
     static def checkout(StepsExecutor self, final Scm scm) {
         self.logger.info "+ checkout"
-        File cloneDir = new File("${self.getWorkingDir()}/${self.env.JOB_NAME}");
+        File cloneDir = new File("${self.getWorkingDir()}/${scm.userRemoteConfigs[0].name}");
 //        cloneDir.delete()
         cloneDir.mkdirs()
 
@@ -81,12 +81,13 @@ class Scm  {
             )
         }
         this.branches = config.getValue('pipeline.scm.gitscm.branches') as List<Branch>
-        ServiceLocator.getService(ILoggerService).debug this.toString()
+        ServiceLocator.getService(ILoggerService).debug "SCM Create configuration ${this.toString()}"
     }
 
     Scm(userRemoteConfigs, branches) {
         this.userRemoteConfigs = userRemoteConfigs
         this.branches = branches
+        ServiceLocator.getService(ILoggerService).debug "SCM Create configuration ${this.toString()}"
     }
 }
 

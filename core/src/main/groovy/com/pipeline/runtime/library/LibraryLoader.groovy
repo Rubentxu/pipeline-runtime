@@ -101,8 +101,10 @@ class LibraryLoader {
         def logger = ServiceLocator.getService(ILoggerService.class)
         logger.info "Loading shared library ${library.name} with version ${version ?: library.defaultVersion}"
         try {
-            def urls = library.retriever.retrieve(library.name, version ?: library.defaultVersion, library.targetPath)
+            def urls = library.retriever.retrieve(library.name, version ?: library.defaultVersion, library.targetPath, library.credentialsId)
             def record = new LibraryRecord(library, version ?: library.defaultVersion, urls.path)
+            logger.info "Library Record ${record}"
+            logger.info "Library URLS ${urls}"
             libRecords.put(record.getIdentifier(), record)
             def globalVars = [:]
             urls.forEach { URL url ->

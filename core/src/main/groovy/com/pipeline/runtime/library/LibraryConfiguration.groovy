@@ -1,6 +1,7 @@
 package com.pipeline.runtime.library
 
 import groovy.transform.CompileStatic
+import groovy.transform.ToString
 import groovy.transform.builder.Builder
 import groovy.transform.builder.ExternalStrategy
 
@@ -8,6 +9,7 @@ import groovy.transform.builder.ExternalStrategy
  * Mock for org.jenkinsci.plugins.workflow.libs.LibraryConfiguration
  */
 @CompileStatic
+@ToString
 class LibraryConfiguration {
 
     String name
@@ -16,6 +18,7 @@ class LibraryConfiguration {
     boolean implicit = false
     boolean allowOverride = true
     String targetPath
+    String credentialsId
 
     LibraryConfiguration validate() {
         if (name && defaultVersion && retriever && targetPath)
@@ -34,14 +37,4 @@ class LibraryConfiguration {
 
     }
 
-    @Override
-    String toString() {
-        return "LibraryConfiguration{" +
-                "name='" + name + '\'' +
-                ", defaultVersion='" + defaultVersion + '\'' +
-                ", retriever=" + retriever +
-                ", implicit=" + implicit +
-                ", allowOverride=" + allowOverride +
-                '}'
-    }
 }

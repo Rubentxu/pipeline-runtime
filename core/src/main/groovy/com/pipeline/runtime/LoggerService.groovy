@@ -47,7 +47,7 @@ class LoggerService implements ILoggerService {
 
     @Override
     void log(String level, String message) {
-        String configLevel = configuration.getValueOrDefault('global.logLevel','INFO')
+        String configLevel = configuration.getValueOrDefault('pipeline.logLevel','INFO')
 
         if (LEVEL_NUMBERS[level] <= LEVEL_NUMBERS[configLevel]) {
             def logPattern = LOG_PATTERN

@@ -67,11 +67,14 @@ class PipelineRuntime implements Runnable {
         def name = library.name
         def version = library?.version ?: 'master'
         SourceRetriever retriever = null
+        String credentialsId = ''
         if (library.retriever?.local?.path) {
             retriever = localSource(toFullPath(library.retriever.local.path))
         } else if (library.retriever?.scm?.git) {
             assert library.retriever?.scm?.git?.remote.startsWith("https:"): "git source must point to a valid repository url"
-            retriever = gitSource(library.retriever?.scm?.git?.remote)
+            retriever = gitSource(library.retriever?.scm?.git?.remote,steps)
+            credentialsId = library.retriever?.scm?.git?.credentialsId?:''
+            logger.debug("CredentialsId  $credentialsId ${credentialsId? 'defined': 'not defined'}")
         } else {
             throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $library")
         }
@@ -83,6 +86,7 @@ class PipelineRuntime implements Runnable {
                 .implicit(false)
                 .targetPath(steps.workingDir)
                 .retriever(retriever)
+                .credentialsId(credentialsId)
                 .build()
         this.libraries.put(libraryConfig.name, libraryConfig)
 
@@ -90,6 +94,7 @@ class PipelineRuntime implements Runnable {
 
     PipelineRuntime init() {
         steps.initializeWorkspace(configuration.getValueOrDefault('pipeline.environmentVars.JOB_NAME','job'))
+        steps.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
         CompilerConfiguration compilerConfiguration = new CompilerConfiguration()
         loader = new GroovyClassLoader(baseClassloader, compilerConfiguration)
 
@@ -107,7 +112,7 @@ class PipelineRuntime implements Runnable {
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(compilerConfiguration)
         for (def library : configuration.getValueOrDefault('pipeline.globalLibraries.libraries', []) as List<Map>) {
-            libLoader.loadLibrary(library.name)
+            libLoader.loadLibrary("${library.name}")
         }
 
         logger.info "Shared libs loaders ${libLoader.libRecords}"
@@ -135,7 +140,7 @@ class PipelineRuntime implements Runnable {
 
     private void initializePipeline(Binding binding) {
         steps.env.putAll(configuration.getValueOrDefault('pipeline.environmentVars',[:]))
-        steps.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
+        logger.debug("Credentials ... ${steps.credentials}")
         steps.configureScm()
         steps.setBinding(binding)
     }
