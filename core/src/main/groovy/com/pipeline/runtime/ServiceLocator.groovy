@@ -3,7 +3,7 @@ package com.pipeline.runtime
 import com.pipeline.runtime.dsl.Steps
 import com.pipeline.runtime.dsl.StepsExecutor
 import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILoggerService
+import com.pipeline.runtime.interfaces.ILogger
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -26,9 +26,9 @@ class ServiceLocator {
 
     public static initialize() {
         IConfiguration configuration = new Configuration()
-        ILoggerService loggerService = new LoggerService(configuration)
+        ILogger loggerService = new Logger(configuration)
         loadService(IConfiguration.class, configuration)
-        loadService(ILoggerService.class, loggerService)
+        loadService(ILogger.class, loggerService)
         loadService(Steps.class, new StepsExecutor(configuration, loggerService))
     }
 }

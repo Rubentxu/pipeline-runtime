@@ -51,7 +51,7 @@ class GitSource implements SourceRetriever {
 
         def branches = [new Branch(name: branch)]
         def scm = new Scm(remoteConfigs, branches)
-        steps.logger.debug "CredentialsId with $credentialsId"
+        steps.log.debug "CredentialsId with $credentialsId"
         steps.checkout scm
         File sourceDir = new File("${steps.getWorkingDir()}/${scm.userRemoteConfigs[0].name}")
         if (sourceDir.exists()) {

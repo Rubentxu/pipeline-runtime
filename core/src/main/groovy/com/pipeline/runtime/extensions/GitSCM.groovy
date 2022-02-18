@@ -3,7 +3,7 @@ package com.pipeline.runtime.extensions
 import com.pipeline.runtime.ServiceLocator
 import com.pipeline.runtime.dsl.StepsExecutor
 import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILoggerService
+import com.pipeline.runtime.interfaces.ILogger
 import groovy.transform.ToString
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
@@ -25,7 +25,7 @@ class GitSCM {
     }
 
     static def checkout(StepsExecutor self, final Scm scm) {
-        self.logger.info "+ checkout"
+        self.log.info "+ checkout"
         File cloneDir = new File("${self.getWorkingDir()}/${scm.userRemoteConfigs[0].name}");
 //        cloneDir.delete()
         cloneDir.mkdirs()
@@ -36,7 +36,7 @@ class GitSCM {
         if(Files.exists(targetPath)) {
             FileUtils.cleanDirectory(targetPath.toFile())
         }
-        self.logger.info "+ checkout in Path ${targetPath.toString()}"
+        self.log.info "+ checkout in Path ${targetPath.toString()}"
         def gitBuilder = Git.cloneRepository()
                 .setURI(scm.userRemoteConfigs[0].url)
                 .setDirectory(targetPath.toFile())
@@ -46,7 +46,7 @@ class GitSCM {
         def credentialsId = scm.userRemoteConfigs[0]?.credentialsId
         if(credentialsId) {
             def typeCredential = self.getTypeCredentials(credentialsId)
-            self.logger.debug "CredentialId with name $credentialsId and type $typeCredential defined"
+            self.log.debug "CredentialId with name $credentialsId and type $typeCredential defined"
             if(typeCredential == 'username_password') {
                 self.withCredentials([ self.usernamePassword(credentialsId: credentialsId,
                         usernameVariable: 'USER', passwordVariable: 'PASS')]) {
@@ -60,7 +60,7 @@ class GitSCM {
             }
         }
         gitBuilder.call()
-        self.logger.debug "Call repository"
+        self.log.debug "Call repository"
 
     }
 }
@@ -81,13 +81,13 @@ class Scm  {
             )
         }
         this.branches = config.getValue('pipeline.scm.gitscm.branches') as List<Branch>
-        ServiceLocator.getService(ILoggerService).debug "SCM Create configuration ${this.toString()}"
+        ServiceLocator.getService(ILogger).debug "SCM Create configuration ${this.toString()}"
     }
 
     Scm(userRemoteConfigs, branches) {
         this.userRemoteConfigs = userRemoteConfigs
         this.branches = branches
-        ServiceLocator.getService(ILoggerService).debug "SCM Create configuration ${this.toString()}"
+        ServiceLocator.getService(ILogger).debug "SCM Create configuration ${this.toString()}"
     }
 }
 

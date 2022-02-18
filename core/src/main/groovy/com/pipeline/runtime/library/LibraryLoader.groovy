@@ -1,10 +1,10 @@
 package com.pipeline.runtime.library
 
 import com.pipeline.runtime.ServiceLocator
-import com.pipeline.runtime.interfaces.ILoggerService
+import com.pipeline.runtime.interfaces.ILogger
 
 import static groovy.io.FileType.FILES
-import groovy.lang.GroovyCodeSource
+
 import java.nio.file.Files
 import java.util.function.Consumer
 import java.util.function.Predicate
@@ -98,50 +98,57 @@ class LibraryLoader {
      * @throws Exception
      */
     private void doLoadLibrary(LibraryConfiguration library, String version = null) throws Exception {
-        def logger = ServiceLocator.getService(ILoggerService.class)
-        logger.info "Loading shared library ${library.name} with version ${version ?: library.defaultVersion}"
+        def logger = ServiceLocator.getService(ILogger.class)
+        logger.info "Loading library ${library.name} with version ${version ?: library.defaultVersion}"
         try {
-            def urls = library.retriever.retrieve(library.name, version ?: library.defaultVersion, library.targetPath, library.credentialsId)
-            def record = new LibraryRecord(library, version ?: library.defaultVersion, urls.path)
+            List<URL> urls = library.retriever.retrieve(library.name, version ?: library.defaultVersion, library.targetPath, library.credentialsId)
+            def rootPaths = urls.collect {it.path }
+            def record = new LibraryRecord(library, version ?: library.defaultVersion, rootPaths)
             logger.info "Library Record ${record}"
             logger.info "Library URLS ${urls}"
             libRecords.put(record.getIdentifier(), record)
             def globalVars = [:]
             urls.forEach { URL url ->
-                def file = new File(url.toURI())
-                logger.info "Global library available in path ${file.toPath()}"
-                def srcPath = file.toPath().resolve('src')
-                def varsPath = file.toPath().resolve('vars')
-                def resourcesPath = file.toPath().resolve('resources')
-                groovyClassLoader.addURL(srcPath.toUri().toURL())
-                groovyClassLoader.addURL(varsPath.toUri().toURL())
-                groovyClassLoader.addURL(resourcesPath.toUri().toURL())
+                File file = new File(url.toURI())
+                if(file.name.endsWith('.jar')) {
+                    groovyClassLoader.addURL(file.toPath().toUri().toURL())
+                    logger.debug("Dependency Lib  in path ${file.toPath()}")
+                } else {
+                    logger.info "Global library available in path ${file.toPath()}"
+                    def srcPath = file.toPath().resolve('src')
+                    def varsPath = file.toPath().resolve('vars')
+                    def resourcesPath = file.toPath().resolve('resources')
+                    groovyClassLoader.addURL(srcPath.toUri().toURL())
+                    groovyClassLoader.addURL(varsPath.toUri().toURL())
+                    groovyClassLoader.addURL(resourcesPath.toUri().toURL())
 
-                if (varsPath.toFile().exists()) {
-                    def ds = Files.list(varsPath)
-                    ds.map { it.toFile() }
-                            .filter ({File it -> it.name.endsWith('.groovy') } as Predicate<File>)
-                            .map { FilenameUtils.getBaseName(it.name) }
-                            .filter ({String it -> !globalVars.containsValue(it) } as Predicate<String>)
-                            .forEach ({ String it ->
-                                def clazz = groovyClassLoader.loadClass(it)
-                                // instantiate by invokeConstructor to avoid interception
-                                Object var = DefaultGroovyMethods.newInstance(clazz)
-                                globalVars.put(it, var)
-                            } as Consumer<String>)
-                    // prevent fd leak on the DirectoryStream from Files.list()
-                    ds.close()
-                }
+                    if (varsPath.toFile().exists()) {
+                        def ds = Files.list(varsPath)
+                        ds.map { it.toFile() }
+                                .filter ({File it -> it.name.endsWith('.groovy') } as Predicate<File>)
+                                .map { FilenameUtils.getBaseName(it.name) }
+                                .filter ({String it -> !globalVars.containsValue(it) } as Predicate<String>)
+                                .forEach ({ String it ->
+                                    def clazz = groovyClassLoader.loadClass(it)
+                                    // instantiate by invokeConstructor to avoid interception
+                                    Object var = DefaultGroovyMethods.newInstance(clazz)
+                                    globalVars.put(it, var)
+                                } as Consumer<String>)
+                        // prevent fd leak on the DirectoryStream from Files.list()
+                        ds.close()
+                    }
 
-                // pre-load library classes using JPU groovy class loader
-                if (preloadLibraryClasses && srcPath.toFile().exists()) {
-                    srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
-                        if (srcFile.name.endsWith(".groovy")) {
-                            Class clazz = groovyClassLoader.parseClass(srcFile)
-                            groovyClassLoader.loadClass(clazz.name)
+                    // pre-load library classes using JPU groovy class loader
+                    if (preloadLibraryClasses && srcPath.toFile().exists()) {
+                        srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
+                            if (srcFile.name.endsWith(".groovy")) {
+                                Class clazz = groovyClassLoader.parseClass(srcFile)
+                                groovyClassLoader.loadClass(clazz.name)
+                            }
                         }
                     }
                 }
+
             }
             record.definedGlobalVars = globalVars as Map<String, Object>
         } catch (Exception e) {

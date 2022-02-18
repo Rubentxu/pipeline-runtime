@@ -3,7 +3,7 @@ package com.pipeline.runtime
 import com.pipeline.runtime.dsl.PipelineDsl
 import com.pipeline.runtime.dsl.Steps
 import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILoggerService
+import com.pipeline.runtime.interfaces.ILogger
 import com.pipeline.runtime.library.*
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
@@ -12,6 +12,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import java.lang.reflect.Method
 
 import static com.pipeline.runtime.library.LocalSource.localSource
+import static com.pipeline.runtime.library.LocalLib.localLib
 import static com.pipeline.runtime.library.GitSource.gitSource
 import static groovy.lang.Closure.DELEGATE_ONLY
 
@@ -27,7 +28,7 @@ class PipelineRuntime implements Runnable {
     private String scriptExtension = "jenkins"
     private ClassLoader baseClassloader = this.class.classLoader
     private IConfiguration configuration
-    private ILoggerService logger
+    private ILogger logger
     private Steps steps
 //    Class scriptBaseClass = StepsExecutor.class
     private Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
@@ -46,7 +47,7 @@ class PipelineRuntime implements Runnable {
         ServiceLocator.initialize()
 
         this.configuration = ServiceLocator.getService(IConfiguration.class)
-        this.logger = ServiceLocator.getService(ILoggerService.class)
+        this.logger = ServiceLocator.getService(ILogger.class)
         this.steps = ServiceLocator.instance.getService(Steps.class)
         scriptRoots.add(jenkinsFile)
 
@@ -75,6 +76,9 @@ class PipelineRuntime implements Runnable {
             retriever = gitSource(library.retriever?.scm?.git?.remote,steps)
             credentialsId = library.retriever?.scm?.git?.credentialsId?:''
             logger.debug("CredentialsId  $credentialsId ${credentialsId? 'defined': 'not defined'}")
+        } else if (library.retriever?.local?.jar) {
+            retriever = localLib(toFullPath(library.retriever.local.jar))
+            logger.debug("Load jar lib ${library.retriever.local.jar}")
         } else {
             throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $library")
         }

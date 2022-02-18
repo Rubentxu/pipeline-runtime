@@ -1,7 +1,7 @@
 package com.pipeline.runtime.dsl
 
 import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILoggerService
+import com.pipeline.runtime.interfaces.ILogger
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -17,23 +17,23 @@ class StepsExecutor extends Script implements Steps {
             withCredentials   : this.&defaultMethodClosure,
     ] as ConcurrentHashMap
     IConfiguration configuration
-    ILoggerService logger
+    ILogger log
 
-    StepsExecutor(IConfiguration configuration, ILoggerService loggerService) {
+    StepsExecutor(IConfiguration configuration, ILogger loggerService) {
         this.configuration = configuration
-        this.logger = loggerService
+        this.log = loggerService
     }
 
     IConfiguration getConfiguration() {
         return this.configuration
     }
 
-    ILoggerService getLogger() {
-        return this.logger
+    ILogger getLog() {
+        return this.log
     }
 
     def defaultMethodClosure(_, closure) {
-        logger.debug 'Get default method Closure'
+        log.debug 'Get default method Closure'
         closure.delegate = this
         return closure()
     }

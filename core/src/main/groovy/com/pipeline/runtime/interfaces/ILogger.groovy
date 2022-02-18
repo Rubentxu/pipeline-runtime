@@ -1,6 +1,6 @@
 package com.pipeline.runtime.interfaces
 
-interface ILoggerService {
+interface ILogger {
     void log(String level, String message)
     void info(String message)
     void warn(String message)

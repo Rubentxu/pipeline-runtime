@@ -31,6 +31,17 @@ dependencies {
 //    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'org.mockito:mockito-core:2.+'
 
+    implementation 'org.jenkins-ci.plugins.workflow:workflow-cps:2.87' // @NOCPS
+    implementation 'org.gitlab4j:gitlab4j-api:4.15.6' // usado en Clase Gitlab
+    implementation 'org.jenkins-ci.plugins.workflow:workflow-multibranch:2.22'
+    implementation 'org.jenkins-ci.plugins:gitlab-plugin:1.5.13' // updateCommitStatus
+    implementation 'org.jenkins-ci.plugins.workflow:workflow-basic-steps:2.21' // sh, echo, error, etc..
+    implementation 'org.jenkins-ci.plugins:pipeline-stage-step:2.3' // stage
+    implementation 'org.jenkins-ci.plugins:sonar:2.11'
+    implementation 'io.jenkins.plugins:gitlab-branch-source:1.4.4' // GitlabServer, GitLabHelper
+    implementation 'org.jenkins-ci.plugins:jira:3.0.14'
+    implementation 'org.jenkinsci.plugins:pipeline-model-definition:1.9.1'
+
 }
 
 test {

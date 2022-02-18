@@ -1,9 +1,9 @@
 package com.pipeline.runtime
 
 import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILoggerService
+import com.pipeline.runtime.interfaces.ILogger
 
-class LoggerService implements ILoggerService {
+class Logger implements ILogger {
 
     static final String NORMAL = "\u001B[0m"
     static final String BOLD = "\u001B[1m"
@@ -41,7 +41,7 @@ class LoggerService implements ILoggerService {
 
     private IConfiguration configuration
 
-    public LoggerService(IConfiguration configuration) {
+    public Logger(IConfiguration configuration) {
         this.configuration = configuration
     }
 
