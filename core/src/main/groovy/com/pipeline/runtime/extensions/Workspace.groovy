@@ -10,11 +10,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
 class Workspace {
-
+    static final String workingDir = 'build/workspace'
     static final ConcurrentMap<String, Object> params = [:] as ConcurrentHashMap
 
     static void initializeWorkspace(StepsExecutor self, String jobName) {
-
         def workingDirPath = toFullPath(self,"${self.getWorkingDir()}")
         def workingDirJobPath = toFullPath(self,"${self.getWorkingDir()}/${jobName}")
         if (workingDirPath.toFile().exists()){
@@ -31,11 +30,16 @@ class Workspace {
 
 
     static void dir(StepsExecutor self, String dir) {
-        this.workingDir = dir
+        self.workingDir = dir
     }
 
     static String getWorkingDir(StepsExecutor self) {
-        return self.configuration.getValueOrDefault('pipeline.workingDir','build/workspace')
+        return self.workingDir
+    }
+
+    static String setWorkingDir(StepsExecutor self, String dir) {
+        self.workingDir = dir
+//        return self.configuration.getValueOrDefault('pipeline.workingDir','build/workspace')
     }
 
     static ConcurrentMap<String, Object> getParams(StepsExecutor self) {

@@ -2,11 +2,13 @@ package com.pipeline.runtime
 
 import com.pipeline.runtime.dsl.PipelineDsl
 import com.pipeline.runtime.dsl.Steps
+import com.pipeline.runtime.dsl.StepsExecutor
 import com.pipeline.runtime.interfaces.IConfiguration
 import com.pipeline.runtime.interfaces.ILogger
 import com.pipeline.runtime.library.*
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.control.messages.WarningMessage
 import org.codehaus.groovy.runtime.InvokerHelper
 
 import java.lang.reflect.Method
@@ -25,13 +27,17 @@ class PipelineRuntime implements Runnable {
     private GroovyScriptEngine gse
     private LibraryLoader libLoader
     private List<String> scriptRoots = []
-    private String scriptExtension = "jenkins"
-    private ClassLoader baseClassloader = this.class.classLoader
+    private String scriptExtension = "groovy"
+    private ClassLoader baseClassloader
     private IConfiguration configuration
     private ILogger logger
     private Steps steps
-//    Class scriptBaseClass = StepsExecutor.class
-    private Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
+    Class scriptBaseClass = StepsExecutor.class
+    private Map<String, String> imports = [
+            "NonCPS": "com.cloudbees.groovy.cps.NonCPS",
+            "Library": "com.pipeline.runtime.library.Library"
+
+    ]
     private Map<String, String> staticImport = [
             "pipeline"  : "com.pipeline.runtime.PipelineRuntime",
             "initialize": "com.pipeline.runtime.PipelineRuntime",
@@ -45,10 +51,9 @@ class PipelineRuntime implements Runnable {
         Objects.requireNonNull(configFile, "Configuration file cannot be null.")
         this.jenkinsFile = toFullPath(jenkinsFile)
         ServiceLocator.initialize()
-
+        baseClassloader = this.class.getClassLoader()// Thread.currentThread().getContextClassLoader()
         this.configuration = ServiceLocator.getService(IConfiguration.class)
         this.logger = ServiceLocator.getService(ILogger.class)
-        this.steps = ServiceLocator.instance.getService(Steps.class)
         scriptRoots.add(jenkinsFile)
 
         configuration.loadConfig(configFile as File)
@@ -59,7 +64,8 @@ class PipelineRuntime implements Runnable {
         }
         configuration.printConfiguration()
 
-
+        def globalExceptionHandler = new ExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(globalExceptionHandler);
     }
 
     void registerSharedLibrary(Map library) {
@@ -83,12 +89,11 @@ class PipelineRuntime implements Runnable {
             throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $library")
         }
 
-
         LibraryConfiguration libraryConfig = LibraryConfiguration.library(name)
                 .defaultVersion(version)
                 .allowOverride(true)
                 .implicit(false)
-                .targetPath(steps.workingDir)
+                .targetPath(configuration.getValueOrDefault('pipeline.workingDir','build/workspace'))
                 .retriever(retriever)
                 .credentialsId(credentialsId)
                 .build()
@@ -97,14 +102,15 @@ class PipelineRuntime implements Runnable {
     }
 
     PipelineRuntime init() {
-        steps.initializeWorkspace(configuration.getValueOrDefault('pipeline.environmentVars.JOB_NAME','job'))
-        steps.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
-        CompilerConfiguration compilerConfiguration = new CompilerConfiguration()
+        logger.debug "Into PipelineRuntime init()"
+
+        CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
         loader = new GroovyClassLoader(baseClassloader, compilerConfiguration)
 
         libLoader = new LibraryLoader(loader, libraries)
         LibraryAnnotationTransformer libraryTransformer = new LibraryAnnotationTransformer(libLoader)
         compilerConfiguration.addCompilationCustomizers(libraryTransformer)
+        compilerConfiguration.setWarningLevel(WarningMessage.NONE)
 
         ImportCustomizer importCustomizer = new ImportCustomizer()
         imports.each { k, v -> importCustomizer.addImport(k, v) }
@@ -112,7 +118,17 @@ class PipelineRuntime implements Runnable {
         compilerConfiguration.addCompilationCustomizers(importCustomizer)
 
         compilerConfiguration.setDefaultScriptExtension(scriptExtension)
-//        configuration.setScriptBaseClass(scriptBaseClass.getName())
+        compilerConfiguration.setScriptBaseClass(scriptBaseClass.getName())
+//        compilerConfiguration.addCompilationCustomizers(new ASTTransformationCustomizer(ToString))
+        compilerConfiguration.setTargetBytecode(CompilerConfiguration.JDK11)
+        compilerConfiguration.setRecompileGroovySource(true)
+
+        File dir = new File("build/target/test-generated-classes");
+        dir.mkdirs();
+        Map options = new HashMap()
+        options.put("stubDir", dir)
+        compilerConfiguration.setJointCompilationOptions(options)
+
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(compilerConfiguration)
         for (def library : configuration.getValueOrDefault('pipeline.globalLibraries.libraries', []) as List<Map>) {
@@ -125,10 +141,7 @@ class PipelineRuntime implements Runnable {
 
     void run() throws IllegalAccessException, InstantiationException, IOException {
         def binding = new Binding()
-
-
-        initializePipeline(binding)
-        def script = loadScript(jenkinsFile, binding)
+        StepsExecutor script = loadScript(jenkinsFile, binding)
         script.run()
     }
 
@@ -142,12 +155,7 @@ class PipelineRuntime implements Runnable {
         return script
     }
 
-    private void initializePipeline(Binding binding) {
-        steps.env.putAll(configuration.getValueOrDefault('pipeline.environmentVars',[:]))
-        logger.debug("Credentials ... ${steps.credentials}")
-        steps.configureScm()
-        steps.setBinding(binding)
-    }
+
 
 
     /**

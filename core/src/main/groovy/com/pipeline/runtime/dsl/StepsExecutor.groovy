@@ -1,12 +1,13 @@
 package com.pipeline.runtime.dsl
 
+import com.pipeline.runtime.ServiceLocator
 import com.pipeline.runtime.interfaces.IConfiguration
 import com.pipeline.runtime.interfaces.ILogger
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-
+//@CompileStatic
 class StepsExecutor extends Script implements Steps {
     private ConcurrentMap<String, Object> dynamicProps = [
             configFileProvider: this.&defaultMethodClosure,
@@ -19,9 +20,10 @@ class StepsExecutor extends Script implements Steps {
     IConfiguration configuration
     ILogger log
 
-    StepsExecutor(IConfiguration configuration, ILogger loggerService) {
-        this.configuration = configuration
-        this.log = loggerService
+    StepsExecutor() {
+        this.configuration = ServiceLocator.getService(IConfiguration.class)
+        this.log = ServiceLocator.getService(ILogger.class)
+        ServiceLocator.loadService(Steps.class, this)
     }
 
     IConfiguration getConfiguration() {
@@ -52,8 +54,28 @@ class StepsExecutor extends Script implements Steps {
 
     @Override
     Object run() {
-        println "Run StepEXECUTOR"
-        return null
+        println "Run Step EXECUTOR"
+        this.setWorkingDir(configuration.getValueOrDefault('pipeline.workingDir','build/workspace'))
+        this.initializeWorkspace(configuration.getValueOrDefault('pipeline.environmentVars.JOB_NAME','job'))
+        this.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
+        initialize()
+        return super.run()
+    }
+
+
+    def initialize() {
+        echo "Initialize CDI Module"
+        ServiceLocator.registerDefaultContext(this)
+        echo "End Initialize CDI Module"
+    }
+
+
+
+
+    public void initializePipeline() {
+        this.env.putAll(configuration.getValueOrDefault('pipeline.environmentVars',[:]))
+        logger.debug("Credentials ... ${this.credentials}")
+        this.configureScm()
     }
 
     def methodMissing(String methodName, args) {

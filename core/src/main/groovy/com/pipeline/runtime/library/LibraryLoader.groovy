@@ -132,12 +132,12 @@ class LibraryLoader {
                                     def clazz = groovyClassLoader.loadClass(it)
                                     // instantiate by invokeConstructor to avoid interception
                                     Object var = DefaultGroovyMethods.newInstance(clazz)
+                                    logger.debug "load script from $clazz.canonicalName"
                                     globalVars.put(it, var)
                                 } as Consumer<String>)
                         // prevent fd leak on the DirectoryStream from Files.list()
                         ds.close()
                     }
-
                     // pre-load library classes using JPU groovy class loader
                     if (preloadLibraryClasses && srcPath.toFile().exists()) {
                         srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->

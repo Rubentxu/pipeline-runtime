@@ -1,7 +1,7 @@
 plugins {
     id 'groovy'
     id 'idea'
-    id 'org.graalvm.buildtools.native' version '0.9.8'
+    id 'org.graalvm.buildtools.native' version '0.9.10'
 }
 
 
@@ -14,8 +14,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 dependencies {
@@ -41,7 +41,7 @@ graalvmNative {
     binaries {
         main {
             javaLauncher = javaToolchains.launcherFor {
-                languageVersion = JavaLanguageVersion.of(8)
+                languageVersion = JavaLanguageVersion.of(11)
             }
         }
     }
@@ -57,7 +57,7 @@ graalvmNative {
             debug = true // Determines if debug info should be generated, defaults to false
             verbose = true // Add verbose output, defaults to false
             fallback = true // Sets the fallback mode of native-image, defaults to false
-            buildArgs.add('-J-Xmx2G')
+            buildArgs.add('-J-Xmx3G')
         }
     }
 }

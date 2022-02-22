@@ -15,8 +15,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 dependencies {
@@ -41,6 +41,19 @@ dependencies {
     implementation 'io.jenkins.plugins:gitlab-branch-source:1.4.4' // GitlabServer, GitLabHelper
     implementation 'org.jenkins-ci.plugins:jira:3.0.14'
     implementation 'org.jenkinsci.plugins:pipeline-model-definition:1.9.1'
+
+    // Plugin dependencies
+//    implementation 'org.jenkins-ci.main:jenkins-core:2.85@jar'
+//    implementation 'org.jenkins-ci.plugins.workflow:workflow-cps:2.87@jar' // @NOCPS
+//    implementation 'org.gitlab4j:gitlab4j-api:4.15.6@jar' // usado en Clase Gitlab
+//    implementation 'org.jenkins-ci.plugins.workflow:workflow-multibranch:2.22@jar'
+//    implementation 'org.jenkins-ci.plugins:gitlab-plugin:1.5.13@jar' // updateCommitStatus
+//    implementation 'org.jenkins-ci.plugins.workflow:workflow-basic-steps:2.21@jar' // sh, echo, error, etc..
+//    implementation 'org.jenkins-ci.plugins:pipeline-stage-step:2.3@jar' // stage
+//    implementation 'org.jenkins-ci.plugins:sonar:2.11@jar'
+//    implementation 'io.jenkins.plugins:gitlab-branch-source:1.4.4@jar' // GitlabServer, GitLabHelper
+//    implementation 'org.jenkins-ci.plugins:jira:3.0.14@jar'
+//    implementation 'org.jenkinsci.plugins:pipeline-model-definition:1.9.1@jar'
 
 }
 

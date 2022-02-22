@@ -1,7 +1,5 @@
 package com.pipeline.runtime
 
-import com.pipeline.runtime.dsl.Steps
-import com.pipeline.runtime.dsl.StepsExecutor
 import com.pipeline.runtime.interfaces.IConfiguration
 import com.pipeline.runtime.interfaces.ILogger
 
@@ -29,6 +27,7 @@ class ServiceLocator {
         ILogger loggerService = new Logger(configuration)
         loadService(IConfiguration.class, configuration)
         loadService(ILogger.class, loggerService)
-        loadService(Steps.class, new StepsExecutor(configuration, loggerService))
+
     }
+
 }
