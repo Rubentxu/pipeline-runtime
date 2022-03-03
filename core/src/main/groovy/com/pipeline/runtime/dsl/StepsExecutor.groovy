@@ -3,6 +3,7 @@ package com.pipeline.runtime.dsl
 import com.pipeline.runtime.ServiceLocator
 import com.pipeline.runtime.interfaces.IConfiguration
 import com.pipeline.runtime.interfaces.ILogger
+import groovy.transform.CompileStatic
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -54,27 +55,17 @@ class StepsExecutor extends Script implements Steps {
 
     @Override
     Object run() {
-        println "Run Step EXECUTOR"
-        this.setWorkingDir(configuration.getValueOrDefault('pipeline.workingDir','build/workspace'))
-        this.initializeWorkspace(configuration.getValueOrDefault('pipeline.environmentVars.JOB_NAME','job'))
-        this.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
-        initialize()
         return super.run()
     }
 
 
     def initialize() {
-        echo "Initialize CDI Module"
-        ServiceLocator.registerDefaultContext(this)
-        echo "End Initialize CDI Module"
-    }
+        println "Run StepEXECUTOR"
 
-
-
-
-    public void initializePipeline() {
+        this.initializeWorkspace(configuration)
+        this.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
         this.env.putAll(configuration.getValueOrDefault('pipeline.environmentVars',[:]))
-        logger.debug("Credentials ... ${this.credentials}")
+        log.debug("Credentials ... ${this.credentials}")
         this.configureScm()
     }
 

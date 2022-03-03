@@ -57,7 +57,7 @@ graalvmNative {
             debug = true // Determines if debug info should be generated, defaults to false
             verbose = true // Add verbose output, defaults to false
             fallback = true // Sets the fallback mode of native-image, defaults to false
-            buildArgs.add('-J-Xmx3G')
+            buildArgs.add('-J-Xmx2G')
         }
     }
 }

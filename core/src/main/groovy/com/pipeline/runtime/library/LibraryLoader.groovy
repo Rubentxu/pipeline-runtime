@@ -138,6 +138,7 @@ class LibraryLoader {
                         // prevent fd leak on the DirectoryStream from Files.list()
                         ds.close()
                     }
+
                     // pre-load library classes using JPU groovy class loader
                     if (preloadLibraryClasses && srcPath.toFile().exists()) {
                         srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
@@ -150,6 +151,7 @@ class LibraryLoader {
                 }
 
             }
+            logger.debug("Defined Global vars $globalVars")
             record.definedGlobalVars = globalVars as Map<String, Object>
         } catch (Exception e) {
             throw new LibraryLoadingException(e, library, version)

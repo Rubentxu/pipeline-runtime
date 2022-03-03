@@ -10,6 +10,8 @@ credentials:
     secret: e_rcabre-token
 
 pipeline:
+  logLevel: 'DEBUG'
+  workingDir: build/workspace
   scm:
     gitscm:
       globalConfigName: jenkins
@@ -30,14 +32,8 @@ pipeline:
     libraries:
       - name: commons
         retriever:
-          scm:
-            git:
-              remote: https://github.com/jenkins-infra/pipeline-library.git
-              credentialsId: "reimagined-parakeet-ssh"
-      - name: local-lib
-        retriever:
           local:
-            path: src/test/resources/scripts
+            path: pipeline-cli/src/test/resources/scripts
   environmentVars:
     JOB_NAME: Ejemplo-pipeline
     MENSAJE: Hola Mundo

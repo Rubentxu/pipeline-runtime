@@ -8,7 +8,6 @@ import com.pipeline.runtime.interfaces.ILogger
 import com.pipeline.runtime.library.*
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.codehaus.groovy.control.messages.WarningMessage
 import org.codehaus.groovy.runtime.InvokerHelper
 
 import java.lang.reflect.Method
@@ -33,11 +32,7 @@ class PipelineRuntime implements Runnable {
     private ILogger logger
     private Steps steps
     Class scriptBaseClass = StepsExecutor.class
-    private Map<String, String> imports = [
-            "NonCPS": "com.cloudbees.groovy.cps.NonCPS",
-            "Library": "com.pipeline.runtime.library.Library"
-
-    ]
+    private Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
     private Map<String, String> staticImport = [
             "pipeline"  : "com.pipeline.runtime.PipelineRuntime",
             "initialize": "com.pipeline.runtime.PipelineRuntime",
@@ -59,13 +54,14 @@ class PipelineRuntime implements Runnable {
         configuration.loadConfig(configFile as File)
         if (configuration.containsKey('pipeline.globalLibraries.libraries')) {
             for (def library : configuration.getValue('pipeline.globalLibraries.libraries') as List<Map>) {
+                logger.debug("Register library $library")
                 registerSharedLibrary(library)
             }
         }
         configuration.printConfiguration()
 
-        def globalExceptionHandler = new ExceptionHandler();
-        Thread.setDefaultUncaughtExceptionHandler(globalExceptionHandler);
+//        def globalExceptionHandler = new ExceptionHandler();
+//        Thread.setDefaultUncaughtExceptionHandler(globalExceptionHandler);
     }
 
     void registerSharedLibrary(Map library) {
@@ -76,18 +72,22 @@ class PipelineRuntime implements Runnable {
         SourceRetriever retriever = null
         String credentialsId = ''
         if (library.retriever?.local?.path) {
+            logger.debug("Load Local Source from ${library.retriever.local.path}")
             retriever = localSource(toFullPath(library.retriever.local.path))
         } else if (library.retriever?.scm?.git) {
             assert library.retriever?.scm?.git?.remote.startsWith("https:"): "git source must point to a valid repository url"
+            logger.debug("Load Git Source from ${library.retriever?.scm?.git?.remote}")
             retriever = gitSource(library.retriever?.scm?.git?.remote,steps)
             credentialsId = library.retriever?.scm?.git?.credentialsId?:''
             logger.debug("CredentialsId  $credentialsId ${credentialsId? 'defined': 'not defined'}")
         } else if (library.retriever?.local?.jar) {
+            logger.debug("Load Jar Source from ${library.retriever?.local?.jar}")
             retriever = localLib(toFullPath(library.retriever.local.jar))
             logger.debug("Load jar lib ${library.retriever.local.jar}")
         } else {
             throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $library")
         }
+
 
         LibraryConfiguration libraryConfig = LibraryConfiguration.library(name)
                 .defaultVersion(version)
@@ -98,6 +98,7 @@ class PipelineRuntime implements Runnable {
                 .credentialsId(credentialsId)
                 .build()
         this.libraries.put(libraryConfig.name, libraryConfig)
+        logger.debug("Library config $libraryConfig")
 
     }
 
@@ -110,7 +111,7 @@ class PipelineRuntime implements Runnable {
         libLoader = new LibraryLoader(loader, libraries)
         LibraryAnnotationTransformer libraryTransformer = new LibraryAnnotationTransformer(libLoader)
         compilerConfiguration.addCompilationCustomizers(libraryTransformer)
-        compilerConfiguration.setWarningLevel(WarningMessage.NONE)
+//        compilerConfiguration.setWarningLevel(WarningMessage.NONE)
 
         ImportCustomizer importCustomizer = new ImportCustomizer()
         imports.each { k, v -> importCustomizer.addImport(k, v) }
@@ -119,19 +120,10 @@ class PipelineRuntime implements Runnable {
 
         compilerConfiguration.setDefaultScriptExtension(scriptExtension)
         compilerConfiguration.setScriptBaseClass(scriptBaseClass.getName())
-//        compilerConfiguration.addCompilationCustomizers(new ASTTransformationCustomizer(ToString))
-        compilerConfiguration.setTargetBytecode(CompilerConfiguration.JDK11)
-        compilerConfiguration.setRecompileGroovySource(true)
-
-        File dir = new File("build/target/test-generated-classes");
-        dir.mkdirs();
-        Map options = new HashMap()
-        options.put("stubDir", dir)
-        compilerConfiguration.setJointCompilationOptions(options)
-
         gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
         gse.setConfig(compilerConfiguration)
         for (def library : configuration.getValueOrDefault('pipeline.globalLibraries.libraries', []) as List<Map>) {
+            logger.debug("Lib loaded ${library.name}")
             libLoader.loadLibrary("${library.name}")
         }
 
@@ -139,19 +131,25 @@ class PipelineRuntime implements Runnable {
         return this
     }
 
+    @Override
     void run() throws IllegalAccessException, InstantiationException, IOException {
         def binding = new Binding()
         StepsExecutor script = loadScript(jenkinsFile, binding)
+        logger.info("Run script $jenkinsFile")
+        script.initialize()
         script.run()
+        logger.info("Post Run script $jenkinsFile")
     }
 
 
-    Script loadScript(String scriptName, Binding binding) {
+    StepsExecutor loadScript(String scriptName, Binding binding) {
         Objects.requireNonNull(binding, "Binding cannot be null.")
         Objects.requireNonNull(gse, "GroovyScriptEngine is not initialized: Initialize the helper by calling init().")
+        logger.info("Load script $jenkinsFile")
         Class scriptClass = gse.loadScriptByName(scriptName)
         setGlobalVars(binding)
-        Script script = InvokerHelper.createScript(scriptClass, binding)
+
+        StepsExecutor script = InvokerHelper.createScript(scriptClass, binding)
         return script
     }
 
@@ -190,14 +188,14 @@ class PipelineRuntime implements Runnable {
 //        libLoader.loadImplicitLibraries()
 //        libLoader.loadLibrary(args.identifier)
 //        setGlobalVars(script.getBinding())
-        return new LibClassLoader(ServiceLocator.instance.getService(Steps.class), null)
+        return new LibClassLoader(ServiceLocator.getService(Steps.class), null)
     }
 
     static LibClassLoader library(String expression) {
 //        libLoader.loadImplicitLibraries()
 //        libLoader.loadLibrary(expression)
 //        setGlobalVars(script.getBinding())
-        return new LibClassLoader(ServiceLocator.instance.getService(Steps.class), null)
+        return new LibClassLoader(ServiceLocator.getService(Steps.class), null)
     }
 
     static void pipeline(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {

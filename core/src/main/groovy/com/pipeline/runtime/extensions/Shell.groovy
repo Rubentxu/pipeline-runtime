@@ -9,24 +9,24 @@ import java.nio.file.FileSystems
 
 //@CompileStatic
 class Shell {
-    static private Map environment = [*: System.env,]
+
     long timeout = 15000
     boolean redirectErrorStream = false
 
 
     private static Process run(StepsExecutor self, String command) {
 
-        if(environment.JAVA_HOME) {
-            environment.PATH= "${environment.JAVA_HOME}/bin:${environment.PATH}"
+        if(self.getEnv().JAVA_HOME) {
+            self.getEnv().PATH= "${self.getEnv().JAVA_HOME}/bin:${self.getEnv().PATH}"
         }
 
-        if(environment.M2_HOME) {
-            environment.PATH= "${environment.M2_HOME}/bin:${environment.PATH}"
+        if(self.getEnv().M2_HOME) {
+            self.getEnv().PATH= "${self.getEnv().M2_HOME}/bin:${self.getEnv().PATH}"
         }
-
+        def directory = self.toFullPath(self.getWorkingDir()).toFile()
         new ProcessBuilder(['sh', '-c', command])
-                .directory(self.toFullPath("${self.getWorkingDir()}/${self.env.JOB_NAME}").toFile())
-                .environment(environment.collect { "${it.key}=${it.value}" } as String[])
+                .directory(directory)
+                .environment(self.getEnv().collect { "${it.key}=${it.value}" } as String[])
                 .start()
 
     }
@@ -61,14 +61,6 @@ class Shell {
             println result.serr
         }
     }
-
-    Shell env(Map env) {
-        this.environment.putAll(env)
-        return this
-    }
-
-
-
 
     Shell timeout(int timeout) {
         this.timeout = timeout

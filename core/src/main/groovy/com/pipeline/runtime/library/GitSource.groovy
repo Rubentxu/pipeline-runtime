@@ -17,6 +17,7 @@ class GitSource implements SourceRetriever {
     Steps steps
 
     GitSource(String sourceURL, Steps steps) {
+        assert sourceURL!=null && steps!=null : "GitSource necesita que sus dependencias no sean nulas"
         this.sourceURL = sourceURL
         this.steps = steps
     }

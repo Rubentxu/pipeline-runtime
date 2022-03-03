@@ -29,5 +29,4 @@ class ServiceLocator {
         loadService(ILogger.class, loggerService)
 
     }
-
 }

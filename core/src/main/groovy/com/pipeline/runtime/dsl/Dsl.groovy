@@ -95,7 +95,7 @@ class StageDsl {
             @DelegatesTo(value = StepsExecutor, strategy = DELEGATE_ONLY)
             @ClosureParams(value = SimpleType, options = ["java.util.Map"]) final Closure closure) {
 
-        closure.delegate = ServiceLocator.instance.getService(Steps.class)
+        closure.delegate = ServiceLocator.getService(Steps.class)
         closure.resolveStrategy = DELEGATE_ONLY
         closure.call()
     }

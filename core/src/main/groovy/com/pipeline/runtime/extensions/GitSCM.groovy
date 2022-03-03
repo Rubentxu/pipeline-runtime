@@ -26,8 +26,8 @@ class GitSCM {
 
     static def checkout(StepsExecutor self, final Scm scm) {
         self.log.info "+ checkout"
-        File cloneDir = new File("${self.getWorkingDir()}/${scm.userRemoteConfigs[0].name}");
-//        cloneDir.delete()
+        File cloneDir = new File("${self.getWorkingDir()}")
+        cloneDir.delete()
         cloneDir.mkdirs()
 
         def targetDirectory = scm.extensions.find { it.$class() == 'RelativeTargetDirectory' }?: ''
