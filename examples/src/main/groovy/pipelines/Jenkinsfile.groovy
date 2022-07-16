@@ -1,6 +1,6 @@
 package pipelines
 
-import static com.pipeline.runtime.dsl.Dsl.pipeline
+import static com.pipeline.runtime.PipelineRuntime.pipeline
 
 println '''
    ___                                ___ _            _ _

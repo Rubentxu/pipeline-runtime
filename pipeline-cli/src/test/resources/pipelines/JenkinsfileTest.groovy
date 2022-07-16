@@ -44,6 +44,7 @@ pipeline {
                 echo "SOME_STRING=${SOME_STRING}"
                 echo "Mensaje ${MENSAJE}"
                 hello()
+                echo message()
                 echo message.otherMessage()
                 sh 'echo $PATH'
                 sh '''echo "Who I'm $SHELL"'''
@@ -55,7 +56,7 @@ pipeline {
         }
         stage("Test") {
             steps {
-                sh "gradle assemble  --stacktrace"
+                sh "gradle -version"
                 sh "mvn -version"
                 sh "java -version"
                 withCredentials([ string(credentialsId: 'gitlab_token', variable: 'TOKEN')
