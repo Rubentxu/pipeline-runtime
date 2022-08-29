@@ -1,74 +1,45 @@
 package com.pipeline.runtime.library
 
 import com.pipeline.runtime.dsl.Steps
-import com.pipeline.runtime.extensions.Branch
-import com.pipeline.runtime.extensions.Scm
-import com.pipeline.runtime.extensions.UserRemoteConfigs
+import com.pipeline.runtime.extensions.domain.scm.GitSCM
+import groovy.transform.ToString
 
-import java.util.concurrent.TimeUnit
-
-import groovy.transform.CompileStatic
-
+import java.nio.file.Path
 
 //@CompileStatic
+@ToString
 class GitSource implements SourceRetriever {
 
-    String sourceURL
     Steps steps
 
-    GitSource(String sourceURL, Steps steps) {
-        assert sourceURL!=null && steps!=null : "GitSource necesita que sus dependencias no sean nulas"
-        this.sourceURL = sourceURL
-        this.steps = steps
-    }
-
-//    @Override
-//    List<URL> retrieve(String repository, String branch, String targetPath) throws IllegalStateException {
-//        File target = new File(targetPath)
-//        def fetch = target.toPath().resolve("$repository@$branch").toFile()
-//        if (fetch.exists()) {
-//            return [fetch.toURI().toURL()]
-//        } else {
-//            fetch.parentFile.mkdirs()
-//        }
-//        def command = "git clone -b $branch --single-branch $sourceURL $repository@$branch"
-//        println command
-//        def processBuilder = new ProcessBuilder(command.split(' '))
-//                .inheritIO()
-//                .directory(target)
-//        def proc = processBuilder.start()
-//        proc.waitFor(CLONE_TIMEOUT_MIN, TimeUnit.MINUTES)
-//        proc.exitValue()
-//        return [fetch.toURI().toURL()]
-//    }
-
     @Override
-    List<URL> retrieve(String repository, String branch, String targetPath, String credentialsId) throws IllegalStateException {
-        def remoteConfigs = [new UserRemoteConfigs(url: sourceURL,
-                name: "$repository@$branch",
-                refspec: branch,
-                credentialsId: credentialsId
-        )]
+    List<URL> retrieve(LibraryConfiguration configuration) throws IllegalStateException {
 
-        def branches = [new Branch(name: branch)]
-        def scm = new Scm(remoteConfigs, branches)
-        steps.log.debug "CredentialsId with $credentialsId"
-        steps.checkout scm
-        File sourceDir = new File("${steps.getWorkingDir()}/${scm.userRemoteConfigs[0].name}")
+        String relativePath = "../libs/${configuration.name}"
+        def scm = new GitSCM()
+                .branch(configuration.defaultVersion)
+                .credentialsId(configuration.credentialsId)
+                .relativeTargetDirectory(relativePath)
+                .url(configuration.sourcePath)
+
+        steps.log.system "CredentialsId with $configuration.credentialsId"
+        steps.checkout scm.toMap()
+        File sourceDir = Path.of(steps.getWorkingDir(),relativePath).normalize().toFile()
+
         if (sourceDir.exists()) {
+            if(configuration.modulesPaths) {
+                List<URL> sources = configuration.modulesPaths.collect {
+                    sourceDir.toPath().normalize().resolve(it).normalize().toUri().toURL()
+                }
+                return sources
+            }
             return [sourceDir.toURI().toURL()]
         }
         throw new IllegalStateException("Directory $sourceDir.path does not exists")
     }
 
-    static GitSource gitSource(String source, Steps steps) {
-        new GitSource(source, steps)
+    static GitSource gitSource() {
+        new GitSource()
     }
 
-    @Override
-    String toString() {
-        return "GitSource{" +
-                "sourceURL='" + sourceURL + '\'' +
-                '}'
-    }
 }

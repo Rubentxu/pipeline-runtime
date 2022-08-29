@@ -1,3 +1,14 @@
+
+*.zip
+*.tar
+*.tgz
+**/.env
+*.http
+*credentials.json
+gradle/*
+!modules/gradle/*
+
+
 # Compiled class file
 *.class
 

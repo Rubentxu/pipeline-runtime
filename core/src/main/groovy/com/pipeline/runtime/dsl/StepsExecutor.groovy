@@ -1,42 +1,31 @@
 package com.pipeline.runtime.dsl
 
-import com.pipeline.runtime.ServiceLocator
-import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILogger
-import groovy.transform.CompileStatic
+import com.pipeline.runtime.extensions.domain.EnvVars
+import com.pipeline.runtime.interfaces.Initializable
+import com.pipeline.runtime.validations.ValidationCategory
 
+import java.util.Map.Entry
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
+import static groovy.lang.Closure.DELEGATE_FIRST
+
 //@CompileStatic
-class StepsExecutor extends Script implements Steps {
+class StepsExecutor extends Script implements Steps, Initializable {
+    static final EnvVars env = [*: System.env,] as ConcurrentHashMap
+    static final ConcurrentMap<String, Object> params = [:] as ConcurrentHashMap
+    public static final Object lock = new Object()
+
     private ConcurrentMap<String, Object> dynamicProps = [
             configFileProvider: this.&defaultMethodClosure,
             ansiColor         : this.&defaultMethodClosure,
             container         : this.&defaultMethodClosure,
             node              : this.&defaultMethodClosure,
-            dir               : this.&defaultMethodClosure,
             withCredentials   : this.&defaultMethodClosure,
     ] as ConcurrentHashMap
-    IConfiguration configuration
-    ILogger log
 
-    StepsExecutor() {
-        this.configuration = ServiceLocator.getService(IConfiguration.class)
-        this.log = ServiceLocator.getService(ILogger.class)
-        ServiceLocator.loadService(Steps.class, this)
-    }
-
-    IConfiguration getConfiguration() {
-        return this.configuration
-    }
-
-    ILogger getLog() {
-        return this.log
-    }
 
     def defaultMethodClosure(_, closure) {
-        log.debug 'Get default method Closure'
         closure.delegate = this
         return closure()
     }
@@ -45,28 +34,9 @@ class StepsExecutor extends Script implements Steps {
         return this
     }
 
-    void echo(String message) {
-        println message
-    }
-
-    void error(String message) {
-        throw new Exception(message)
-    }
-
     @Override
     Object run() {
         return super.run()
-    }
-
-
-    def initialize() {
-        println "Run StepEXECUTOR"
-
-        this.initializeWorkspace(configuration)
-        this.credentials.addAll(configuration.getValueOrDefault('credentials',[:]))
-        this.env.putAll(configuration.getValueOrDefault('pipeline.environmentVars',[:]))
-        log.debug("Credentials ... ${this.credentials}")
-        this.configureScm()
     }
 
     def methodMissing(String methodName, args) {
@@ -96,5 +66,68 @@ class StepsExecutor extends Script implements Steps {
         }
     }
 
+    @Override
+    def initialize(Map configuration) {
+        println "Run StepEXECUTOR"
+        println(configuration)
+        this.initializeWorkspace(configuration)
+        use(ValidationCategory) {
+            List expandCredentials = configuration.validateAndGet('credentials')
+                    .is(List.class)
+                    .defaultValueIfInvalid([])
+                    .collect {
+                        it.collectEntries { key, value ->
+                            if (value.contains('${')) {
+                                [key, env.expand(value)]
+                            } else {
+                                [key, value]
+                            }
+                        }
+                    }
 
+            List expandGlobalConfigFiles = configuration.validateAndGet('globalConfigFiles')
+                    .is(List.class)
+                    .defaultValueIfInvalid([])
+                    .collect {
+                        it.collectEntries { key, value ->
+                            if (value.contains('${')) {
+                                [key, env.expand(value)]
+                            } else {
+                                [key, value]
+                            }
+                        }
+                    }
+
+            storeCredentials(expandCredentials)
+            storeGlobalConfigFiles(expandGlobalConfigFiles)
+            this.env.putAll(configuration.validateAndGet('pipeline.environmentVars').isMap().defaultValueIfInvalid([:]))
+        }
+        this.configureScm(configuration)
+
+    }
+
+    ConcurrentMap<String, Object> getParams() {
+        return params
+    }
+
+    EnvVars getEnv() {
+        return env
+    }
+
+    def propertyMissing(String prop) {
+        env[prop]
+    }
+
+    void setProperty(String prop, Object value) {
+        env[prop] = value
+    }
+
+    Map env(Map env) {
+        this.env.putAll(env)
+        return this.env
+    }
+
+    void environment(@DelegatesTo(value = Map, strategy = DELEGATE_FIRST) final Closure closure) {
+        env.with(closure)
+    }
 }

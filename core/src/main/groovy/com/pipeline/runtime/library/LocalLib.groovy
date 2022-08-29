@@ -2,17 +2,15 @@ package com.pipeline.runtime.library
 
 import groovy.io.FileType
 import groovy.transform.CompileStatic
-import groovy.transform.Immutable
+import groovy.transform.ToString
 
-@Immutable
+@ToString
 @CompileStatic
 class LocalLib implements SourceRetriever {
 
-    String sourceURL
-
     @Override
-    List<URL> retrieve(String repository, String branch, String targetPath, String credentialsId) {
-        def sourceDir = new File(sourceURL).toPath().toFile()
+    List<URL> retrieve(LibraryConfiguration configuration) {
+        def sourceDir = new File(configuration.sourcePath).toPath().toFile()
         if (sourceDir.exists()) {
             if(sourceDir.isDirectory()) {
                 def list = []
@@ -26,14 +24,8 @@ class LocalLib implements SourceRetriever {
         throw new IllegalStateException("Directory $sourceDir.path does not exists")
     }
 
-    static LocalLib localLib(String source) {
-        new LocalLib(source)
+    static LocalLib localLib() {
+        new LocalLib()
     }
 
-    @Override
-    String toString() {
-        return "LocalSource{" +
-                "sourceURL='" + sourceURL + '\'' +
-                '}'
-    }
 }

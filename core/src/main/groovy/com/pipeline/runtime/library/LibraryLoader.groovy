@@ -1,10 +1,8 @@
 package com.pipeline.runtime.library
 
-import com.pipeline.runtime.ServiceLocator
-import com.pipeline.runtime.interfaces.ILogger
+import com.pipeline.runtime.interfaces.IRunnerLogger
 
-import static groovy.io.FileType.FILES
-
+import java.nio.file.Path
 import java.nio.file.Files
 import java.util.function.Consumer
 import java.util.function.Predicate
@@ -40,10 +38,12 @@ class LibraryLoader {
     Boolean preloadLibraryClasses = true
 
     final Map<String, LibraryRecord> libRecords = new HashMap<>()
+    IRunnerLogger logger
 
-    LibraryLoader(GroovyClassLoader groovyClassLoader, Map<String, LibraryConfiguration> libraryDescriptions) {
+    LibraryLoader(GroovyClassLoader groovyClassLoader, Map<String, LibraryConfiguration> libraryDescriptions, IRunnerLogger logger) {
         this.groovyClassLoader = groovyClassLoader
         this.libraryDescriptions = libraryDescriptions
+        this.logger = logger
     }
 
     static String getLibraryId(LibraryConfiguration lib, String version = null) {
@@ -98,14 +98,15 @@ class LibraryLoader {
      * @throws Exception
      */
     private void doLoadLibrary(LibraryConfiguration library, String version = null) throws Exception {
-        def logger = ServiceLocator.getService(ILogger.class)
-        logger.info "Loading library ${library.name} with version ${version ?: library.defaultVersion}"
+
+        logger.system "Loading library ${library.name} with version ${version ?: library.defaultVersion}"
         try {
-            List<URL> urls = library.retriever.retrieve(library.name, version ?: library.defaultVersion, library.targetPath, library.credentialsId)
+//            List<URL> urls = library.retriever.retrieve(version ?: library.defaultVersion, library.credentialsId, library.modulesPaths)
+            List<URL> urls = library.retriever.retrieve(library)
             def rootPaths = urls.collect {it.path }
             def record = new LibraryRecord(library, version ?: library.defaultVersion, rootPaths)
-            logger.info "Library Record ${record}"
-            logger.info "Library URLS ${urls}"
+            logger.system "Library Record ${record}"
+            logger.system "Library URLS ${urls}"
             libRecords.put(record.getIdentifier(), record)
             def globalVars = [:]
             urls.forEach { URL url ->
@@ -114,10 +115,12 @@ class LibraryLoader {
                     groovyClassLoader.addURL(file.toPath().toUri().toURL())
                     logger.debug("Dependency Lib  in path ${file.toPath()}")
                 } else {
-                    logger.info "Global library available in path ${file.toPath()}"
-                    def srcPath = file.toPath().resolve('src')
-                    def varsPath = file.toPath().resolve('vars')
-                    def resourcesPath = file.toPath().resolve('resources')
+                    logger.system "Global library available in path ${file.toPath()}"
+                    Path srcPath = file.toPath().resolve('src')
+                    Path varsPath = file.toPath().resolve('vars')
+                    Path resourcesPath = file.toPath().resolve('resources')
+                    assert srcPath.toFile().exists() ||  srcPath.toFile().exists(): "Not found Library Sources in '${file.toString()}'"
+
                     groovyClassLoader.addURL(srcPath.toUri().toURL())
                     groovyClassLoader.addURL(varsPath.toUri().toURL())
                     groovyClassLoader.addURL(resourcesPath.toUri().toURL())
@@ -140,14 +143,14 @@ class LibraryLoader {
                     }
 
                     // pre-load library classes using JPU groovy class loader
-                    if (preloadLibraryClasses && srcPath.toFile().exists()) {
-                        srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
-                            if (srcFile.name.endsWith(".groovy")) {
-                                Class clazz = groovyClassLoader.parseClass(srcFile)
-                                groovyClassLoader.loadClass(clazz.name)
-                            }
-                        }
-                    }
+//                    if (preloadLibraryClasses && srcPath.toFile().exists()) {
+//                        srcPath.toFile().eachFileRecurse (FILES) { File srcFile ->
+//                            if (srcFile.name.endsWith(".groovy")) {
+//                                Class clazz = groovyClassLoader.parseClass(srcFile)
+//                                groovyClassLoader.loadClass(clazz.name)
+//                            }
+//                        }
+//                    }
                 }
 
             }

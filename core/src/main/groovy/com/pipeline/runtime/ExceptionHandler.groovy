@@ -1,10 +1,9 @@
 package com.pipeline.runtime
 
-import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILogger
+
 
 class ExceptionHandler implements Thread.UncaughtExceptionHandler {
-    private Logger log = new Logger()
+    private RunnerLogger log = new RunnerLogger()
 
     public void uncaughtException(Thread t, Throwable ex) {
         def log = ServiceLocator.getService(ILogger.class)

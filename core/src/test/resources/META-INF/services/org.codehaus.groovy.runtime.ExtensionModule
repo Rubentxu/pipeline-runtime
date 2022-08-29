@@ -4,6 +4,9 @@ moduleVersion=1.0
 #staticExtensionClasses=com.pipeline.runtime.StaticStringExtension
 extensionClasses=com.pipeline.runtime.extensions.Credentials,\
   com.pipeline.runtime.extensions.Shell, \
-  com.pipeline.runtime.extensions.GitSCM, \
-  com.pipeline.runtime.extensions.Environment, \
+  com.pipeline.runtime.extensions.SCMAdapter, \
+  com.pipeline.runtime.extensions.BaseSteps, \
+  com.pipeline.runtime.dsl.PipelineDsl, \
+  com.pipeline.runtime.StepLogger, \
   com.pipeline.runtime.extensions.Workspace
+

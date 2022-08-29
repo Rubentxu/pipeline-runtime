@@ -1,7 +1,28 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
+    }
+}
 plugins {
     id 'groovy'
     id 'idea'
-    id 'org.graalvm.buildtools.native' version '0.9.10'
+    id 'jacoco'
+    id 'org.graalvm.buildtools.native' version '0.9.13'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+jacoco {
+    toolVersion = "0.8.5"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.pipeline.runtime.PipelineCLI"
+    }
 }
 
 
@@ -21,8 +42,8 @@ java {
 dependencies {
     implementation project(":core")
     implementation 'org.codehaus.groovy:groovy-all:3.0.9'
-    implementation 'info.picocli:picocli:4.6.2'
-    annotationProcessor 'info.picocli:picocli-codegen:4.6.2'
+    implementation 'info.picocli:picocli-groovy:4.6.3'
+    annotationProcessor 'info.picocli:picocli-codegen:4.6.3'
 
     implementation 'org.slf4j:slf4j-simple:1.7.28'
 

@@ -22,25 +22,14 @@ java {
 dependencies {
     implementation 'org.codehaus.groovy:groovy-all:3.0.9'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
-    implementation('org.apache.commons:commons-lang3:3.12.0')
     implementation('commons-io:commons-io:2.11.0')
+    implementation 'commons-lang:commons-lang:2.6'
     implementation 'org.yaml:snakeyaml:1.29'
 
     testImplementation 'org.spockframework:spock-core:2.1-M2-groovy-3.0'
 //    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
 //    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'org.mockito:mockito-core:2.+'
-
-    implementation 'org.jenkins-ci.plugins.workflow:workflow-cps:2.87' // @NOCPS
-    implementation 'org.gitlab4j:gitlab4j-api:4.15.6' // usado en Clase Gitlab
-    implementation 'org.jenkins-ci.plugins.workflow:workflow-multibranch:2.22'
-    implementation 'org.jenkins-ci.plugins:gitlab-plugin:1.5.13' // updateCommitStatus
-    implementation 'org.jenkins-ci.plugins.workflow:workflow-basic-steps:2.21' // sh, echo, error, etc..
-    implementation 'org.jenkins-ci.plugins:pipeline-stage-step:2.3' // stage
-    implementation 'org.jenkins-ci.plugins:sonar:2.11'
-    implementation 'io.jenkins.plugins:gitlab-branch-source:1.4.4' // GitlabServer, GitLabHelper
-    implementation 'org.jenkins-ci.plugins:jira:3.0.14'
-    implementation 'org.jenkinsci.plugins:pipeline-model-definition:1.9.1'
 
 }
 
@@ -50,18 +39,6 @@ test {
         events "passed", "skipped", "failed"
     }
 }
-
-
-task runScript(type: JavaExec) {
-    description 'Run Groovy pipeline'
-    def pipeline = 'Jenkinsfile'// project?.pipeline?:'Jenkinsfile'
-//    classpath sourceSets.integration.runtimeClasspath
-    classpath = sourceSets.main.runtimeClasspath
-    main = "pipelines.$pipeline"
-    workingDir = buildDir
-}
-defaultTasks 'runScript'
-
 
 
 jacocoTestReport {

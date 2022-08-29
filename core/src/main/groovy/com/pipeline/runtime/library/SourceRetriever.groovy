@@ -2,7 +2,9 @@ package com.pipeline.runtime.library
 
 import groovy.transform.CompileStatic
 
-@CompileStatic
+import java.nio.file.Path
+
+//@CompileStatic
 interface SourceRetriever {
-    List<URL> retrieve(String repository, String branch, String targetPath, String credentialsId)
+    List<URL> retrieve(LibraryConfiguration configuration)
 }

@@ -1,176 +1,80 @@
 package com.pipeline.runtime
 
-import com.pipeline.runtime.dsl.PipelineDsl
-import com.pipeline.runtime.dsl.Steps
+
 import com.pipeline.runtime.dsl.StepsExecutor
-import com.pipeline.runtime.interfaces.IConfiguration
-import com.pipeline.runtime.interfaces.ILogger
+import com.pipeline.runtime.interfaces.ICasc
+import com.pipeline.runtime.interfaces.Initializable
+import com.pipeline.runtime.interfaces.IRunnerLogger
 import com.pipeline.runtime.library.*
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
+import com.pipeline.runtime.validations.ValidationCategory
 import org.codehaus.groovy.runtime.InvokerHelper
 
 import java.lang.reflect.Method
 
-import static com.pipeline.runtime.library.LocalSource.localSource
-import static com.pipeline.runtime.library.LocalLib.localLib
 import static com.pipeline.runtime.library.GitSource.gitSource
-import static groovy.lang.Closure.DELEGATE_ONLY
+import static com.pipeline.runtime.library.LocalLib.localLib
+import static com.pipeline.runtime.library.LocalSource.localSource
 
 //@CompileStatic
-class PipelineRuntime implements Runnable {
-    private static Method SCRIPT_SET_BINDING = Script.getMethod('setBinding', Binding.class)
-    private GroovyClassLoader loader
+class PipelineRuntime implements Runnable, Initializable {
+
     private String jenkinsFile
     private Map<String, LibraryConfiguration> libraries = [:]
-    private GroovyScriptEngine gse
-    private LibraryLoader libLoader
-    private List<String> scriptRoots = []
-    private String scriptExtension = "groovy"
-    private ClassLoader baseClassloader
-    private IConfiguration configuration
-    private ILogger logger
-    private Steps steps
-    Class scriptBaseClass = StepsExecutor.class
-    private Map<String, String> imports = ["NonCPS": "com.cloudbees.groovy.cps.NonCPS", "Library": "com.pipeline.runtime.library.Library"]
-    private Map<String, String> staticImport = [
-            "pipeline"  : "com.pipeline.runtime.PipelineRuntime",
-            "initialize": "com.pipeline.runtime.PipelineRuntime",
-            "library"   : "com.pipeline.runtime.PipelineRuntime",
-            "scm"       : "com.pipeline.runtime.extensions.GitSCM"
-    ]
+    private CustomGroovyScriptEngine scriptEngine
+    private List<Map> configLibraries
+    private ICasc casc
+    public static IRunnerLogger logger
+    private String workingDir
+    List<String> scriptRoots
 
-
-    PipelineRuntime(String jenkinsFile, String configFile) {
-        Objects.requireNonNull(jenkinsFile, "Pipelinefile cannot be null.")
-        Objects.requireNonNull(configFile, "Configuration file cannot be null.")
-        this.jenkinsFile = toFullPath(jenkinsFile)
-        ServiceLocator.initialize()
-        baseClassloader = this.class.getClassLoader()// Thread.currentThread().getContextClassLoader()
-        this.configuration = ServiceLocator.getService(IConfiguration.class)
-        this.logger = ServiceLocator.getService(ILogger.class)
-        scriptRoots.add(jenkinsFile)
-
-        configuration.loadConfig(configFile as File)
-        if (configuration.containsKey('pipeline.globalLibraries.libraries')) {
-            for (def library : configuration.getValue('pipeline.globalLibraries.libraries') as List<Map>) {
-                logger.debug("Register library $library")
-                registerSharedLibrary(library)
-            }
-        }
-        configuration.printConfiguration()
-
+    PipelineRuntime(List<String> scriptRoots, IRunnerLogger logger) {
+        this.scriptRoots = scriptRoots
+        Objects.requireNonNull(this.scriptRoots, "Pipelinefile cannot be null.")
+        this.jenkinsFile = toFullPath(scriptRoots.get(0))
+        this.logger = logger
 //        def globalExceptionHandler = new ExceptionHandler();
 //        Thread.setDefaultUncaughtExceptionHandler(globalExceptionHandler);
     }
 
-    void registerSharedLibrary(Map library) {
-        Objects.requireNonNull(library.name, "Property 'name' of the shared library must be defined")
-        Objects.requireNonNull(library.retriever, "Property 'retriever' of the shared library must be defined")
-        def name = library.name
-        def version = library?.version ?: 'master'
-        SourceRetriever retriever = null
-        String credentialsId = ''
-        if (library.retriever?.local?.path) {
-            logger.debug("Load Local Source from ${library.retriever.local.path}")
-            retriever = localSource(toFullPath(library.retriever.local.path))
-        } else if (library.retriever?.scm?.git) {
-            assert library.retriever?.scm?.git?.remote.startsWith("https:"): "git source must point to a valid repository url"
-            logger.debug("Load Git Source from ${library.retriever?.scm?.git?.remote}")
-            retriever = gitSource(library.retriever?.scm?.git?.remote,steps)
-            credentialsId = library.retriever?.scm?.git?.credentialsId?:''
-            logger.debug("CredentialsId  $credentialsId ${credentialsId? 'defined': 'not defined'}")
-        } else if (library.retriever?.local?.jar) {
-            logger.debug("Load Jar Source from ${library.retriever?.local?.jar}")
-            retriever = localLib(toFullPath(library.retriever.local.jar))
-            logger.debug("Load jar lib ${library.retriever.local.jar}")
+
+    private String resolveSourcePath(Map config) {
+        String sourcePath = ''
+        if (config.retriever?.local?.path) {
+            logger.system("Load Local Source from ${config.retriever.local.path}")
+            sourcePath = toFullPath(config.retriever.local.path)
+
+        } else if (config.retriever?.scm?.git) {
+            logger.system("Load Git Source from ${config.retriever?.scm?.git?.remote}")
+            sourcePath = config.retriever?.scm?.git?.remote
+
+        } else if (config.retriever?.local?.jar) {
+            logger.system("Load Jar Source from ${config.retriever?.local?.jar}")
+            sourcePath = toFullPath(config.retriever.local.jar)
+
         } else {
-            throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $library")
+            throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $config")
         }
-
-
-        LibraryConfiguration libraryConfig = LibraryConfiguration.library(name)
-                .defaultVersion(version)
-                .allowOverride(true)
-                .implicit(false)
-                .targetPath(configuration.getValueOrDefault('pipeline.workingDir','build/workspace'))
-                .retriever(retriever)
-                .credentialsId(credentialsId)
-                .build()
-        this.libraries.put(libraryConfig.name, libraryConfig)
-        logger.debug("Library config $libraryConfig")
-
+        return sourcePath
     }
 
-    PipelineRuntime init() {
-        logger.debug "Into PipelineRuntime init()"
+    private SourceRetriever resolveSourceRetriever(Map config) {
+        SourceRetriever retriever = null
 
-        CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
-        loader = new GroovyClassLoader(baseClassloader, compilerConfiguration)
+        if (config.retriever?.local?.path) {
+            retriever = localSource()
 
-        libLoader = new LibraryLoader(loader, libraries)
-        LibraryAnnotationTransformer libraryTransformer = new LibraryAnnotationTransformer(libLoader)
-        compilerConfiguration.addCompilationCustomizers(libraryTransformer)
-//        compilerConfiguration.setWarningLevel(WarningMessage.NONE)
+        } else if (config.retriever?.scm?.git) {
+            assert config.retriever?.scm?.git?.remote.startsWith("https:"): "git source must point to a valid repository url"
+            retriever = gitSource()
 
-        ImportCustomizer importCustomizer = new ImportCustomizer()
-        imports.each { k, v -> importCustomizer.addImport(k, v) }
-        staticImport.each { k, v -> importCustomizer.addStaticImport(v, k) }
-        compilerConfiguration.addCompilationCustomizers(importCustomizer)
+        } else if (config.retriever?.local?.jar) {
+            retriever = localLib()
+            logger.system("Load jar lib ${config.retriever.local.jar}")
 
-        compilerConfiguration.setDefaultScriptExtension(scriptExtension)
-        compilerConfiguration.setScriptBaseClass(scriptBaseClass.getName())
-        gse = new GroovyScriptEngine(scriptRoots.toArray() as String[], loader)
-        gse.setConfig(compilerConfiguration)
-        for (def library : configuration.getValueOrDefault('pipeline.globalLibraries.libraries', []) as List<Map>) {
-            logger.debug("Lib loaded ${library.name}")
-            libLoader.loadLibrary("${library.name}")
+        } else {
+            throw new NullPointerException("Property 'source' (local or git) of the shared library must be defined $config")
         }
-
-        logger.info "Shared libs loaders ${libLoader.libRecords}"
-        return this
-    }
-
-    @Override
-    void run() throws IllegalAccessException, InstantiationException, IOException {
-        def binding = new Binding()
-        StepsExecutor script = loadScript(jenkinsFile, binding)
-        logger.info("Run script $jenkinsFile")
-        script.initialize()
-        script.run()
-        logger.info("Post Run script $jenkinsFile")
-    }
-
-
-    StepsExecutor loadScript(String scriptName, Binding binding) {
-        Objects.requireNonNull(binding, "Binding cannot be null.")
-        Objects.requireNonNull(gse, "GroovyScriptEngine is not initialized: Initialize the helper by calling init().")
-        logger.info("Load script $jenkinsFile")
-        Class scriptClass = gse.loadScriptByName(scriptName)
-        setGlobalVars(binding)
-
-        StepsExecutor script = InvokerHelper.createScript(scriptClass, binding)
-        return script
-    }
-
-
-
-
-    /**
-     * Sets global variables defined in loaded libraries on the binding
-     * @param binding
-     */
-    public void setGlobalVars(Binding binding) {
-        libLoader.libRecords.values().stream()
-                .flatMap { it.definedGlobalVars.entrySet().stream() }
-                .forEach { e ->
-                    if (e.value instanceof Script) {
-                        Script script = Script.cast(e.value)
-                        // invoke setBinding from method to avoid interception
-                        SCRIPT_SET_BINDING.invoke(script, binding)
-                    }
-                    binding.setVariable(e.key, e.value)
-                }
+        retriever
     }
 
 
@@ -181,39 +85,85 @@ class PipelineRuntime implements Runnable {
         return path
     }
 
+    private LibraryConfiguration createLibraryConfig(Map config) {
+        Objects.requireNonNull(config.name, "Property 'name' of the shared library must be defined")
+        Objects.requireNonNull(config.retriever, "Property 'retriever' of the shared library must be defined")
+        String name = config.name as String
+        String version = config?.version ?: 'master'
 
+        use(ValidationCategory) {
+            String credentialsId = config.validateAndGet('retriever.scm.git.credentialsId').isString().defaultValueIfInvalid('')
+            List<String> modulesPaths = config.validateAndGet('modulesPaths').is(List.class).defaultValueIfInvalid(['./'])
 
-    static LibClassLoader library(Map args) {
-        assert args.identifier
-//        libLoader.loadImplicitLibraries()
-//        libLoader.loadLibrary(args.identifier)
-//        setGlobalVars(script.getBinding())
-        return new LibClassLoader(ServiceLocator.getService(Steps.class), null)
+            LibraryConfiguration libraryConfig = new LibraryConfiguration.LibraryBuilder()
+                    .name(name)
+                    .defaultVersion(version)
+                    .allowOverride(true)
+                    .implicit(false)
+                    .targetPath(this.workingDir)
+                    .credentialsId(credentialsId)
+                    .modulesPaths(modulesPaths)
+                    .sourcePath(resolveSourcePath(config))
+                    .build()
+
+            libraryConfig.retriever = resolveSourceRetriever(config)
+            libraryConfig.validate()
+            return libraryConfig
+
+        }
     }
 
-    static LibClassLoader library(String expression) {
-//        libLoader.loadImplicitLibraries()
-//        libLoader.loadLibrary(expression)
-//        setGlobalVars(script.getBinding())
-        return new LibClassLoader(ServiceLocator.getService(Steps.class), null)
+    @Override
+    def initialize(Map configuration) {
+        this.casc = configuration
+        logger.system "Into PipelineRuntime init()"
+
+        use(ValidationCategory) {
+            this.configLibraries = configuration.validateAndGet('pipeline.globalLibraries.libraries').is(List.class).defaultValueIfInvalid([]) as List<Map>
+            this.workingDir = configuration.validateAndGet('pipeline.workingDir').isString().throwIfInvalid()
+        }
+        logger.prettyPrint('SYSTEM', configuration)
+
+        for (Map library : (configLibraries as List<Map>)) {
+
+            LibraryConfiguration libraryConfiguration = createLibraryConfig(library)
+            this.libraries.put(libraryConfiguration.name, libraryConfiguration)
+            logger.system("Library loaded ${library.name}")
+        }
+
+        Map<String, String> imports = ["NonCPS" : "com.cloudbees.groovy.cps.NonCPS",
+                                       "Library": "com.pipeline.runtime.library.Library"
+        ]
+        Map<String, String> staticImport = [
+                "pipeline"  : "com.pipeline.runtime.PipelineRuntime",
+                "initialize": "com.pipeline.runtime.PipelineRuntime",
+                "library"   : "com.pipeline.runtime.PipelineRuntime",
+                "scm"       : "com.pipeline.runtime.extensions.SCMAdapter"
+        ]
+        ClassLoader baseClassloader = this.class.getClassLoader()
+        this.scriptEngine = CustomGroovyScriptEngine.create(scriptRoots, imports, staticImport, logger, libraries, baseClassloader)
+        return this
     }
 
-    static void pipeline(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {
-        final PipelineDsl dsl = new PipelineDsl()
+    @Override
+    void run() throws IllegalAccessException, InstantiationException, IOException {
+        Objects.requireNonNull(scriptEngine, "GroovyScriptEngine is not initialized: Initialize the helper by calling init().")
 
-        closure.delegate = dsl
-        closure.resolveStrategy = DELEGATE_ONLY
-        closure.call()
+        def binding = new Binding()
+        StepsExecutor script = scriptEngine.loadScript(jenkinsFile, binding)
+        logger.system("Run script $jenkinsFile")
+        script.initialize(casc)
+
+        // TODO Revisar la carga de la libreria para que sea opcional o implicita
+        libraries.each { libraryName, libraryConfiguration ->
+            if (libraryConfiguration.retriever instanceof GitSource) {
+                (libraryConfiguration.retriever as GitSource).steps = script
+            }
+            scriptEngine.libraryLoader.loadLibrary(libraryName)
+        }
+        scriptEngine.setGlobalVars(binding)
+        script.run()
+        logger.system("Post Run script $jenkinsFile")
     }
-
-
-    static void node(@DelegatesTo(value = PipelineDsl, strategy = DELEGATE_ONLY) final Closure closure) {
-        final PipelineDsl dsl = new PipelineDsl()
-
-        closure.delegate = dsl
-        closure.resolveStrategy = DELEGATE_ONLY
-        closure.call()
-    }
-
 
 }

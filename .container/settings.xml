@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 http://maven.apache.org/xsd/settings-1.2.0.xsd" xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <servers>
+    <server>
+      <username>${env.MAVEN_REPOSITORY_USER}</username>
+      <password>${env.MAVEN_REPOSITORY_TOKEN}</password>
+      <id>central</id>
+    </server>
+    <server>
+      <username>${env.MAVEN_REPOSITORY_USER}</username>
+      <password>${env.MAVEN_REPOSITORY_TOKEN}</password>
+      <id>snapshots</id>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+      <repositories>
+        <repository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>virtual-maven</name>
+          <url>${env.MAVEN_REPOSITORY}</url>
+        </repository>
+        <repository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>virtual-maven</name>
+          <url>${env.MAVEN_REPOSITORY}</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>virtual-maven</name>
+          <url>${env.MAVEN_REPOSITORY}</url>
+        </pluginRepository>
+        <pluginRepository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>virtual-maven</name>
+          <url>${env.MAVEN_REPOSITORY}</url>
+        </pluginRepository>
+      </pluginRepositories>
+      <id>repository</id>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>repository</activeProfile>
+  </activeProfiles>
+</settings>

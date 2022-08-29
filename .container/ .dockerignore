@@ -1,0 +1,6 @@
+build/
+.idea/
+.editorconfig
+.gitignore
+*.tar.gz
+README.md

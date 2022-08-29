@@ -1,9 +1,7 @@
 package com.pipeline.runtime.extensions
 
-import com.pipeline.runtime.dsl.StepsExecutor
-import groovy.transform.CompileStatic
+
 import org.apache.commons.io.FileUtils
-import org.eclipse.jgit.api.CloneCommand
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.lib.RepositoryCache
@@ -12,7 +10,6 @@ import org.eclipse.jgit.util.FS
 import spock.lang.Shared
 import spock.lang.Specification
 
-import static org.mockito.Mockito.when
 //import static org.powermock.api.mockito.PowerMockito.mockStatic
 
 //@CompileStatic
@@ -60,29 +57,4 @@ class GitSCMSpec extends Specification {
                 .call()
     }
 
-    def "Debe clonar un repositorio"() {
-        given:
-        StepsExecutor steps =  new StepsExecutor()
-        steps.getWorkingDir = {
-            '/tmp'
-        }
-        steps.getTypeCredentials = { 'username_password' }
-        steps.usernamePassword = { params->
-            steps.env[params.usernameVariable] = 'userGradle'
-            steps.env[params.passwordVariable] = 'passwordGradle'
-        }
-
-        def remoteConfig = new UserRemoteConfigs(url: remoteRepo.getDirectory().getAbsolutePath(), name: 'test', credentialsId: 'gitlab' )
-
-        def scm = new Scm( new ArrayList<UserRemoteConfigs>(){{ add(remoteConfig)}},
-                new ArrayList<Branch>(){{ add(new Branch(name:'master'))}})
-
-        when:
-        GitSCM.checkout(steps, scm)
-
-        then:
-        true
-
-
-    }
 }

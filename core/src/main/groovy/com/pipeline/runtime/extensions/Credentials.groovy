@@ -21,17 +21,24 @@ class Credentials {
             @NamedParam(value = 'credentialsId', type = String.class),
             @NamedParam(value = 'variable', type = String.class)
     ]) Map<String, String> params) {
-        def secret = credentials.find { it.id == params.credentialsId }
+        def secret = this.credentials.find { it.id == params.credentialsId }
         self.env[params.variable] = secret.secret
     }
 
-    static def getCredentials(StepsExecutor self) {
-        println "Store Credentials $credentials"
-        return credentials
+
+    static void storeCredentials(StepsExecutor self, List credentials) {
+        synchronized (StepsExecutor.lock) {
+            this.credentials.addAll(credentials)
+        }
     }
 
     static def findCredentials(StepsExecutor self, String credentialsId) {
-        return credentials.find { it.id == credentialsId  }
+        synchronized (StepsExecutor.lock) {
+            def result =  this.credentials.find { it.id == credentialsId  }
+            assert result: "Not found Credentials with ID ${credentialsId}"
+            return result
+        }
+
     }
 
     static def getTypeCredentials(StepsExecutor self, String credentialsId) {

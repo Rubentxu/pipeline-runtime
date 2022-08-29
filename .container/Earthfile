@@ -1,0 +1,78 @@
+VERSION 0.6
+
+start:
+    LOCALLY
+    ARG --required sharedlibs_dir
+
+    DO +LOCAL_VOLUME
+
+    DO +START_PIPELINE --SHAREDLIBS_DIR=$sharedlibs_dir
+
+image-base:
+    FROM DOCKERFILE .
+    SAVE IMAGE prunner:latest
+
+REMOVE_VOLUMES:
+    COMMAND
+    RUN docker volume rm container-data || true
+    RUN docker volume rm cache-data || true
+    RUN rm -fr build/ || true
+
+
+LOCAL_VOLUME:
+    COMMAND
+    LOCALLY
+        RUN mkdir -m777 -p build/
+
+START_PIPELINE:
+    COMMAND
+    ARG --required SHAREDLIBS_DIR
+    ARG --required SECRETS_FILE
+    WITH DOCKER --load  prunner:cli=+image-base
+        RUN docker run \
+        --name prunner \
+        --rm \
+        --detach \
+        --env NPM_CONFIG_STRICT_SSL="false" \
+        --volume container-data:/home/prunner \
+        --volume cache-data:/opt/cache \
+        --volume $(pwd)/build:/opt/workspace \
+        --volume $SHAREDLIBS_DIR:/opt/libs \
+        --mount type=bind,source=$SECRETS_FILE,target=/var/jenkins_home/.env \
+        --network host \
+        prunner:cli bash
+    END
+
+STOP_PIPELINE:
+    COMMAND
+    RUN docker stop prunner || true
+
+
+stop:
+    LOCALLY
+    DO +STOP_PIPELINE
+
+cleanup:
+    LOCALLY
+
+    DO +REMOVE_VOLUMES
+
+delete-all-images:
+    LOCALLY
+
+    RUN  docker rm -f $(docker ps -a -q)
+    RUN  docker rmi $(docker images -q) -f
+
+stop-all-container:
+    LOCALLY
+
+    RUN docker stop $(docker ps -a -q)
+
+delete-all-volumes:
+    LOCALLY
+
+    RUN docker volume rm $(docker volume ls -q) --force
+
+logs:
+    LOCALLY
+        RUN docker logs --follow prunner
